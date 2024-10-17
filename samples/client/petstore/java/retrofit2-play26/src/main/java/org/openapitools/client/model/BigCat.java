@@ -47,13 +47,13 @@ public class BigCat extends Cat {
    * Gets or Sets kind
    */
   public enum KindEnum {
-    LIONS("lions"),
+    LIONS(String.valueOf("lions")),
     
-    TIGERS("tigers"),
+    TIGERS(String.valueOf("tigers")),
     
-    LEOPARDS("leopards"),
+    LEOPARDS(String.valueOf("leopards")),
     
-    JAGUARS("jaguars");
+    JAGUARS(String.valueOf("jaguars"));
 
     private String value;
 
@@ -83,13 +83,14 @@ public class BigCat extends Cat {
   }
 
   public static final String JSON_PROPERTY_KIND = "kind";
+  @jakarta.annotation.Nullable
   private KindEnum kind;
 
   public BigCat() {
 
   }
 
-  public BigCat kind(KindEnum kind) {
+  public BigCat kind(@jakarta.annotation.Nullable KindEnum kind) {
     
     this.kind = kind;
     return this;
@@ -111,18 +112,18 @@ public class BigCat extends Cat {
 
   @JsonProperty(JSON_PROPERTY_KIND)
   @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
-  public void setKind(KindEnum kind) {
+  public void setKind(@jakarta.annotation.Nullable KindEnum kind) {
     this.kind = kind;
   }
 
   @Override
-  public BigCat className(String className) {
+  public BigCat className(@jakarta.annotation.Nonnull String className) {
     this.setClassName(className);
     return this;
   }
 
   @Override
-  public BigCat color(String color) {
+  public BigCat color(@jakarta.annotation.Nullable String color) {
     this.setColor(color);
     return this;
   }
