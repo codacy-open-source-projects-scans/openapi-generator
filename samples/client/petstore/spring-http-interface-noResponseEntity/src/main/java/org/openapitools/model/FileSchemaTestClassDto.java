@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import org.openapitools.model.FileDto;
+import org.springframework.lang.Nullable;
 import org.openapitools.jackson.nullable.JsonNullable;
 import java.time.OffsetDateTime;
 import jakarta.validation.constraints.NotNull;
@@ -22,15 +23,15 @@ import jakarta.annotation.Generated;
  */
 
 @JsonTypeName("FileSchemaTestClass")
-@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", comments = "Generator version: 7.11.0-SNAPSHOT")
+@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", comments = "Generator version: 7.18.0-SNAPSHOT")
 public class FileSchemaTestClassDto {
 
-  private FileDto file;
+  private @Nullable FileDto file;
 
   
   private List<FileDto> files = new ArrayList<>();
 
-  public FileSchemaTestClassDto file(FileDto file) {
+  public FileSchemaTestClassDto file(@Nullable FileDto file) {
     this.file = file;
     return this;
   }
@@ -41,11 +42,11 @@ public class FileSchemaTestClassDto {
    */
   
   @JsonProperty("file")
-  public FileDto getFile() {
+  public @Nullable FileDto getFile() {
     return file;
   }
 
-  public void setFile(FileDto file) {
+  public void setFile(@Nullable FileDto file) {
     this.file = file;
   }
 

@@ -34,8 +34,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.*;
-import java.util.regex.Pattern;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static org.openapitools.codegen.utils.CamelizeOption.LOWERCASE_FIRST_LETTER;
 import static org.openapitools.codegen.utils.CamelizeOption.UPPERCASE_FIRST_CHAR;
@@ -149,6 +149,10 @@ public abstract class AbstractPhpCodegen extends DefaultCodegen implements Codeg
         cliOptions.add(new CliOption(CodegenConstants.MODEL_PACKAGE, CodegenConstants.MODEL_PACKAGE_DESC));
         cliOptions.add(new CliOption(CodegenConstants.API_PACKAGE, CodegenConstants.API_PACKAGE_DESC));
         cliOptions.add(new CliOption(VARIABLE_NAMING_CONVENTION, "naming convention of variable name, e.g. camelCase.")
+                .addEnum("camelCase", "Use camelCase convention")
+                .addEnum("PascalCase", "Use PascalCase convention")
+                .addEnum("snake_case", "Use snake_case convention")
+                .addEnum("original", "Do not change the variable name")
                 .defaultValue("snake_case"));
         cliOptions.add(new CliOption(CodegenConstants.INVOKER_PACKAGE, "The main namespace to use for all classes. e.g. Yay\\Pets"));
         cliOptions.add(new CliOption(PACKAGE_NAME, "The main package name for classes. e.g. GeneratedPetstore"));
@@ -373,7 +377,7 @@ public abstract class AbstractPhpCodegen extends DefaultCodegen implements Codeg
         } else if (StringUtils.isNotBlank(p.get$ref())) { // model
             String type = super.getTypeDeclaration(p);
             return (!languageSpecificPrimitives.contains(type))
-                    ? "\\" + modelPackage + "\\" + type : type;
+                    ? "\\" + modelPackage + "\\" + toModelName(type) : type;
         }
         return super.getTypeDeclaration(p);
     }
@@ -399,6 +403,10 @@ public abstract class AbstractPhpCodegen extends DefaultCodegen implements Codeg
         if (openAPIType == null) {
             LOGGER.error("OpenAPI Type for {} is null. Default to UNKNOWN_OPENAPI_TYPE instead.", p.getName());
             openAPIType = "UNKNOWN_OPENAPI_TYPE";
+        }
+
+        if ((p.getAnyOf() != null && !p.getAnyOf().isEmpty()) || (p.getOneOf() != null && !p.getOneOf().isEmpty())) {
+            return openAPIType;
         }
 
         if (typeMapping.containsKey(openAPIType)) {
@@ -435,7 +443,7 @@ public abstract class AbstractPhpCodegen extends DefaultCodegen implements Codeg
         }
 
         // translate @ for properties (like @type) to at_.
-        // Otherwise an additional "type" property will leed to duplcates
+        // Otherwise an additional "type" property will lead to duplicates
         name = name.replaceAll("^@", "at_");
 
         // sanitize name
@@ -447,6 +455,8 @@ public abstract class AbstractPhpCodegen extends DefaultCodegen implements Codeg
             name = camelize(name, LOWERCASE_FIRST_LETTER);
         } else if ("PascalCase".equals(variableNamingConvention)) {
             name = camelize(name, UPPERCASE_FIRST_CHAR);
+        } else if ("original".equals(variableNamingConvention)) {
+            // return the name as it is
         } else { // default to snake case
             // return the name in underscore style
             // PhoneNumber => phone_number
@@ -501,6 +511,11 @@ public abstract class AbstractPhpCodegen extends DefaultCodegen implements Codeg
 
     @Override
     public String toModelName(String name) {
+
+        if (modelNameMapping.containsKey(name)) {
+            return modelNameMapping.get(name);
+        }
+
         // memoization
         String origName = name;
         if (schemaKeyToModelNameCache.containsKey(origName)) {
@@ -641,7 +656,7 @@ public abstract class AbstractPhpCodegen extends DefaultCodegen implements Codeg
 
         if ("String".equalsIgnoreCase(type) || p.isString) {
             if (example == null) {
-                example = "'" +  escapeTextInSingleQuotes(p.paramName) + "_example'";
+                example = "'" + escapeTextInSingleQuotes(p.paramName) + "_example'";
             } else {
                 example = escapeText(example);
             }
@@ -878,7 +893,7 @@ public abstract class AbstractPhpCodegen extends DefaultCodegen implements Codeg
         }
         // only process files with php extension
         if ("php".equals(FilenameUtils.getExtension(file.toString()))) {
-            this.executePostProcessor(new String[] {phpPostProcessFile, file.toString()});
+            this.executePostProcessor(new String[]{phpPostProcessFile, file.toString()});
         }
     }
 
@@ -908,5 +923,29 @@ public abstract class AbstractPhpCodegen extends DefaultCodegen implements Codeg
     @Override
     public GeneratorLanguage generatorLanguage() {
         return GeneratorLanguage.PHP;
+    }
+
+    @Override
+    public String toOneOfName(List<String> names, Schema composedSchema) {
+        List<Schema> schemas = ModelUtils.getInterfaces(composedSchema);
+
+        List<String> types = new ArrayList<>();
+        for (Schema s : schemas) {
+            types.add(getTypeDeclaration(s));
+        }
+
+        return String.join("|", types);
+    }
+
+    @Override
+    public String toAllOfName(List<String> names, Schema composedSchema) {
+        List<Schema> schemas = ModelUtils.getInterfaces(composedSchema);
+
+        List<String> types = new ArrayList<>();
+        for (Schema s : schemas) {
+            types.add(getTypeDeclaration(s));
+        }
+
+        return String.join("&", types);
     }
 }

@@ -51,7 +51,7 @@ public class ScalaAkkaHttpServerCodegen extends AbstractScalaCodegen implements 
     public static final String AKKA_HTTP_VERSION_DESC = "The version of akka-http";
     public static final String PEKKO_HTTP_VERSION = "pekkoHttpVersion";
     public static final String PEKKO_HTTP_VERSION_DESC = "The version of pekko-http";
-    public static final String DEFAULT_AKKA_HTTP_VERSION = "10.1.10";
+    public static final String DEFAULT_AKKA_HTTP_VERSION = "10.2.9";
     public static final String DEFAULT_PEKKO_HTTP_VERSION = "1.1.0";
 
     public static final String GENERATE_AS_MANAGED_SOURCES = "asManagedSources";
@@ -336,14 +336,14 @@ public class ScalaAkkaHttpServerCodegen extends AbstractScalaCodegen implements 
             "String"
     );
 
-    private static final Map<String, String> pathTypeToMatcher = ImmutableMap.<String,String>builder()
-        .put("Int", "IntNumber")
-        .put("Long", "LongNumber")
-        .put("Float", "FloatNumber")
-        .put("Double", "DoubleNumber")
-        .put("Boolean", "Boolean")
-        .put("String", "Segment")
-    .build();
+    private static final Map<String, String> pathTypeToMatcher = ImmutableMap.<String, String>builder()
+            .put("Int", "IntNumber")
+            .put("Long", "LongNumber")
+            .put("Float", "FloatNumber")
+            .put("Double", "DoubleNumber")
+            .put("Boolean", "Boolean")
+            .put("String", "Segment")
+            .build();
 
     protected void addPathMatcher(CodegenOperation codegenOperation) {
         LinkedList<String> allPaths = new LinkedList<>(Arrays.asList(codegenOperation.path.split("/")));

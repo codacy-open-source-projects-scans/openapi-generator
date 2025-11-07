@@ -1,15 +1,12 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <ctype.h>
+
 #include "PetAPI.h"
 
 #define MAX_NUMBER_LENGTH 16
 #define MAX_BUFFER_LENGTH 4096
-#define intToStr(dst, src) \
-    do {\
-    char dst[256];\
-    snprintf(dst, 256, "%ld", (long int)(src));\
-}while(0)
+#define MAX_NUMBER_LENGTH_LONG 21
 
 // Functions for enum STATUS for PetAPI_findPetsByStatus
 
@@ -72,9 +69,7 @@ PetAPI_addPet(apiClient_t *apiClient, pet_t *body)
     apiClient->response_code = 0;
 
     // create the path
-    long sizeOfPath = strlen("/pet")+1;
-    char *localVarPath = malloc(sizeOfPath);
-    snprintf(localVarPath, sizeOfPath, "/pet");
+    char *localVarPath = strdup("/pet");
 
 
 
@@ -144,14 +139,12 @@ PetAPI_deletePet(apiClient_t *apiClient, long petId, char *api_key)
     apiClient->response_code = 0;
 
     // create the path
-    long sizeOfPath = strlen("/pet/{petId}")+1;
-    char *localVarPath = malloc(sizeOfPath);
-    snprintf(localVarPath, sizeOfPath, "/pet/{petId}");
+    char *localVarPath = strdup("/pet/{petId}");
 
 
 
     // Path Params
-    long sizeOfPathParams_petId = sizeof(petId)+3 + strlen("{ petId }");
+    long sizeOfPathParams_petId = sizeof(petId)+3 + sizeof("{ petId }") - 1;
     if(petId == 0){
         goto end;
     }
@@ -159,7 +152,7 @@ PetAPI_deletePet(apiClient_t *apiClient, long petId, char *api_key)
     snprintf(localVarToReplace_petId, sizeOfPathParams_petId, "{%s}", "petId");
 
     char localVarBuff_petId[256];
-    intToStr(localVarBuff_petId, petId);
+    snprintf(localVarBuff_petId, sizeof localVarBuff_petId, "%ld", petId);
 
     localVarPath = strReplace(localVarPath, localVarToReplace_petId, localVarBuff_petId);
 
@@ -237,9 +230,7 @@ PetAPI_findPetsByStatus(apiClient_t *apiClient, list_t *status)
     apiClient->response_code = 0;
 
     // create the path
-    long sizeOfPath = strlen("/pet/findByStatus")+1;
-    char *localVarPath = malloc(sizeOfPath);
-    snprintf(localVarPath, sizeOfPath, "/pet/findByStatus");
+    char *localVarPath = strdup("/pet/findByStatus");
 
 
 
@@ -330,9 +321,7 @@ PetAPI_findPetsByTags(apiClient_t *apiClient, list_t *tags)
     apiClient->response_code = 0;
 
     // create the path
-    long sizeOfPath = strlen("/pet/findByTags")+1;
-    char *localVarPath = malloc(sizeOfPath);
-    snprintf(localVarPath, sizeOfPath, "/pet/findByTags");
+    char *localVarPath = strdup("/pet/findByTags");
 
 
 
@@ -421,9 +410,7 @@ PetAPI_getDaysWithoutIncident(apiClient_t *apiClient)
     apiClient->response_code = 0;
 
     // create the path
-    long sizeOfPath = strlen("/store/daysWithoutIncident")+1;
-    char *localVarPath = malloc(sizeOfPath);
-    snprintf(localVarPath, sizeOfPath, "/store/daysWithoutIncident");
+    char *localVarPath = strdup("/store/daysWithoutIncident");
 
 
 
@@ -486,14 +473,12 @@ PetAPI_getPetById(apiClient_t *apiClient, long petId)
     apiClient->response_code = 0;
 
     // create the path
-    long sizeOfPath = strlen("/pet/{petId}")+1;
-    char *localVarPath = malloc(sizeOfPath);
-    snprintf(localVarPath, sizeOfPath, "/pet/{petId}");
+    char *localVarPath = strdup("/pet/{petId}");
 
 
 
     // Path Params
-    long sizeOfPathParams_petId = sizeof(petId)+3 + strlen("{ petId }");
+    long sizeOfPathParams_petId = sizeof(petId)+3 + sizeof("{ petId }") - 1;
     if(petId == 0){
         goto end;
     }
@@ -501,7 +486,7 @@ PetAPI_getPetById(apiClient_t *apiClient, long petId)
     snprintf(localVarToReplace_petId, sizeOfPathParams_petId, "{%s}", "petId");
 
     char localVarBuff_petId[256];
-    intToStr(localVarBuff_petId, petId);
+    snprintf(localVarBuff_petId, sizeof localVarBuff_petId, "%ld", petId);
 
     localVarPath = strReplace(localVarPath, localVarToReplace_petId, localVarBuff_petId);
 
@@ -580,9 +565,7 @@ PetAPI_getPicture(apiClient_t *apiClient)
     apiClient->response_code = 0;
 
     // create the path
-    long sizeOfPath = strlen("/pet/picture")+1;
-    char *localVarPath = malloc(sizeOfPath);
-    snprintf(localVarPath, sizeOfPath, "/pet/picture");
+    char *localVarPath = strdup("/pet/picture");
 
 
 
@@ -643,14 +626,12 @@ PetAPI_isPetAvailable(apiClient_t *apiClient, long petId)
     apiClient->response_code = 0;
 
     // create the path
-    long sizeOfPath = strlen("/pet/{petId}/isAvailable")+1;
-    char *localVarPath = malloc(sizeOfPath);
-    snprintf(localVarPath, sizeOfPath, "/pet/{petId}/isAvailable");
+    char *localVarPath = strdup("/pet/{petId}/isAvailable");
 
 
 
     // Path Params
-    long sizeOfPathParams_petId = sizeof(petId)+3 + strlen("{ petId }");
+    long sizeOfPathParams_petId = sizeof(petId)+3 + sizeof("{ petId }") - 1;
     if(petId == 0){
         goto end;
     }
@@ -658,7 +639,7 @@ PetAPI_isPetAvailable(apiClient_t *apiClient, long petId)
     snprintf(localVarToReplace_petId, sizeOfPathParams_petId, "{%s}", "petId");
 
     char localVarBuff_petId[256];
-    intToStr(localVarBuff_petId, petId);
+    snprintf(localVarBuff_petId, sizeof localVarBuff_petId, "%ld", petId);
 
     localVarPath = strReplace(localVarPath, localVarToReplace_petId, localVarBuff_petId);
 
@@ -728,9 +709,7 @@ PetAPI_sharePicture(apiClient_t *apiClient, binary_t* picture)
     apiClient->response_code = 0;
 
     // create the path
-    long sizeOfPath = strlen("/pet/picture")+1;
-    char *localVarPath = malloc(sizeOfPath);
-    snprintf(localVarPath, sizeOfPath, "/pet/picture");
+    char *localVarPath = strdup("/pet/picture");
 
 
 
@@ -799,9 +778,7 @@ PetAPI_specialtyPet(apiClient_t *apiClient)
     apiClient->response_code = 0;
 
     // create the path
-    long sizeOfPath = strlen("/pet/specialty")+1;
-    char *localVarPath = malloc(sizeOfPath);
-    snprintf(localVarPath, sizeOfPath, "/pet/specialty");
+    char *localVarPath = strdup("/pet/specialty");
 
 
 
@@ -870,9 +847,7 @@ PetAPI_updatePet(apiClient_t *apiClient, pet_t *body)
     apiClient->response_code = 0;
 
     // create the path
-    long sizeOfPath = strlen("/pet")+1;
-    char *localVarPath = malloc(sizeOfPath);
-    snprintf(localVarPath, sizeOfPath, "/pet");
+    char *localVarPath = strdup("/pet");
 
 
 
@@ -950,14 +925,12 @@ PetAPI_updatePetWithForm(apiClient_t *apiClient, long petId, char *name, char *s
     apiClient->response_code = 0;
 
     // create the path
-    long sizeOfPath = strlen("/pet/{petId}")+1;
-    char *localVarPath = malloc(sizeOfPath);
-    snprintf(localVarPath, sizeOfPath, "/pet/{petId}");
+    char *localVarPath = strdup("/pet/{petId}");
 
 
 
     // Path Params
-    long sizeOfPathParams_petId = sizeof(petId)+3 + strlen("{ petId }");
+    long sizeOfPathParams_petId = sizeof(petId)+3 + sizeof("{ petId }") - 1;
     if(petId == 0){
         goto end;
     }
@@ -965,7 +938,7 @@ PetAPI_updatePetWithForm(apiClient_t *apiClient, long petId, char *name, char *s
     snprintf(localVarToReplace_petId, sizeOfPathParams_petId, "{%s}", "petId");
 
     char localVarBuff_petId[256];
-    intToStr(localVarBuff_petId, petId);
+    snprintf(localVarBuff_petId, sizeof localVarBuff_petId, "%ld", petId);
 
     localVarPath = strReplace(localVarPath, localVarToReplace_petId, localVarBuff_petId);
 
@@ -1063,14 +1036,12 @@ PetAPI_uploadFile(apiClient_t *apiClient, long petId, char *additionalMetadata, 
     apiClient->response_code = 0;
 
     // create the path
-    long sizeOfPath = strlen("/pet/{petId}/uploadImage")+1;
-    char *localVarPath = malloc(sizeOfPath);
-    snprintf(localVarPath, sizeOfPath, "/pet/{petId}/uploadImage");
+    char *localVarPath = strdup("/pet/{petId}/uploadImage");
 
 
 
     // Path Params
-    long sizeOfPathParams_petId = sizeof(petId)+3 + strlen("{ petId }");
+    long sizeOfPathParams_petId = sizeof(petId)+3 + sizeof("{ petId }") - 1;
     if(petId == 0){
         goto end;
     }
@@ -1078,7 +1049,7 @@ PetAPI_uploadFile(apiClient_t *apiClient, long petId, char *additionalMetadata, 
     snprintf(localVarToReplace_petId, sizeOfPathParams_petId, "{%s}", "petId");
 
     char localVarBuff_petId[256];
-    intToStr(localVarBuff_petId, petId);
+    snprintf(localVarBuff_petId, sizeof localVarBuff_petId, "%ld", petId);
 
     localVarPath = strReplace(localVarPath, localVarToReplace_petId, localVarBuff_petId);
 

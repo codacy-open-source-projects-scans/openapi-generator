@@ -53,6 +53,7 @@ public class TypeScriptAngularClientCodegen extends AbstractTypeScriptClientCode
     private static String FILE_NAME_SUFFIX_PATTERN = "^[a-zA-Z0-9.-]*$";
 
     public static enum QUERY_PARAM_OBJECT_FORMAT_TYPE {dot, json, key}
+
     public static enum PROVIDED_IN_LEVEL {none, root, any, platform}
 
     private static final String DEFAULT_IMPORT_PREFIX = "./";
@@ -83,7 +84,7 @@ public class TypeScriptAngularClientCodegen extends AbstractTypeScriptClientCode
     public static final String NGPACKAGR_VERSION = "ngPackagrVersion";
     public static final String ZONEJS_VERSION = "zonejsVersion";
 
-    protected String ngVersion = "19.0.0";
+    protected String ngVersion = "20.0.0";
     @Getter @Setter
     protected String npmRepository = null;
     @Setter(AccessLevel.PRIVATE) private boolean useSingleRequestParameter = false;
@@ -169,25 +170,12 @@ public class TypeScriptAngularClientCodegen extends AbstractTypeScriptClientCode
 
     @Override
     public String getHelp() {
-        return "Generates a TypeScript Angular (9.x - 19.x) client library.";
+        return "Generates a TypeScript Angular (9.x - 20.x) client library.";
     }
 
     @Override
     public void processOpts() {
         super.processOpts();
-        supportingFiles.add(
-                new SupportingFile("models.mustache", modelPackage().replace('.', File.separatorChar), "models.ts"));
-        supportingFiles
-                .add(new SupportingFile("apis.mustache", apiPackage().replace('.', File.separatorChar), "api.ts"));
-        supportingFiles.add(new SupportingFile("index.mustache", getIndexDirectory(), "index.ts"));
-        supportingFiles.add(new SupportingFile("api.module.mustache", getIndexDirectory(), "api.module.ts"));
-        supportingFiles.add(new SupportingFile("configuration.mustache", getIndexDirectory(), "configuration.ts"));
-        supportingFiles.add(new SupportingFile("variables.mustache", getIndexDirectory(), "variables.ts"));
-        supportingFiles.add(new SupportingFile("encoder.mustache", getIndexDirectory(), "encoder.ts"));
-        supportingFiles.add(new SupportingFile("param.mustache", getIndexDirectory(), "param.ts"));
-        supportingFiles.add(new SupportingFile("gitignore", "", ".gitignore"));
-        supportingFiles.add(new SupportingFile("git_push.sh.mustache", "", "git_push.sh"));
-        supportingFiles.add(new SupportingFile("README.mustache", getIndexDirectory(), "README.md"));
 
         // determine NG version
         SemVer ngVersion;
@@ -198,6 +186,32 @@ public class TypeScriptAngularClientCodegen extends AbstractTypeScriptClientCode
             LOGGER.info("generating code for Angular {} ...", ngVersion);
             LOGGER.info("  (you can select the angular version by setting the additionalProperties (--additional-properties in CLI) ngVersion)");
         }
+        boolean ngVersionAtLeast_17 = ngVersion.atLeast("17.0.0");
+
+        supportingFiles.add(
+                new SupportingFile("models.mustache", modelPackage().replace('.', File.separatorChar), "models.ts"));
+        supportingFiles
+                .add(new SupportingFile("apis.mustache", apiPackage().replace('.', File.separatorChar), "api.ts"));
+        supportingFiles.add(new SupportingFile("index.mustache", getIndexDirectory(), "index.ts"));
+        supportingFiles.add(new SupportingFile("api.module.mustache", getIndexDirectory(), "api.module.ts"));
+        if (ngVersionAtLeast_17) {
+            supportingFiles.add(new SupportingFile("provide-api.mustache", getIndexDirectory(), "provide-api.ts"));
+        }
+        supportingFiles.add(new SupportingFile("configuration.mustache", getIndexDirectory(), "configuration.ts"));
+        supportingFiles.add(new SupportingFile("api.base.service.mustache", getIndexDirectory(), "api.base.service.ts"));
+        supportingFiles.add(new SupportingFile("variables.mustache", getIndexDirectory(), "variables.ts"));
+        supportingFiles.add(new SupportingFile("encoder.mustache", getIndexDirectory(), "encoder.ts"));
+        supportingFiles.add(new SupportingFile("param.mustache", getIndexDirectory(), "param.ts"));
+        supportingFiles.add(new SupportingFile("gitignore", "", ".gitignore"));
+        supportingFiles.add(new SupportingFile("git_push.sh.mustache", "", "git_push.sh"));
+
+        if(ngVersionAtLeast_17) {
+            supportingFiles.add(new SupportingFile("README.mustache", getIndexDirectory(), "README.md"));
+        }
+        else {
+            supportingFiles.add(new SupportingFile("README_beforeV17.mustache", getIndexDirectory(), "README.md"));
+        }
+
 
         if (!ngVersion.atLeast("9.0.0")) {
             throw new IllegalArgumentException("Invalid ngVersion: " + ngVersion + ". Only Angular v9+ is supported.");
@@ -248,6 +262,7 @@ public class TypeScriptAngularClientCodegen extends AbstractTypeScriptClientCode
         }
 
         additionalProperties.put(NG_VERSION, ngVersion);
+        additionalProperties.put("ngVersionAtLeast_17", ngVersionAtLeast_17);
 
         if (additionalProperties.containsKey(API_MODULE_PREFIX)) {
             String apiModulePrefix = additionalProperties.get(API_MODULE_PREFIX).toString();
@@ -411,7 +426,10 @@ public class TypeScriptAngularClientCodegen extends AbstractTypeScriptClientCode
                 hasSomeFormParams = true;
             }
             op.httpMethod = op.httpMethod.toLowerCase(Locale.ENGLISH);
-
+            // deduplicate auth methods by name (as they will lead to duplicate code):
+            op.authMethods =
+                    op.authMethods != null ? op.authMethods.stream().collect(Collectors.collectingAndThen(Collectors.toCollection(() -> new TreeSet<>(Comparator.comparing(x -> x.name))), ArrayList::new))
+                            : null;
 
             // Prep a string buffer where we're going to set up our new version of the string.
             StringBuilder pathBuffer = new StringBuilder();
@@ -442,6 +460,9 @@ public class TypeScriptAngularClientCodegen extends AbstractTypeScriptClientCode
                         break;
                 }
             }
+
+            // backup path in extensions
+            op.vendorExtensions.put("x-path-from-spec", op.path);
 
             // Overwrite path to TypeScript template string, after applying everything we just did.
             op.path = pathBuffer.toString();
@@ -489,7 +510,7 @@ public class TypeScriptAngularClientCodegen extends AbstractTypeScriptClientCode
 
                         // however, it's possible that the child model contains a recursive reference to the parent
                         // in order to support this case, we update the list of imports from properties once again
-                        for (CodegenProperty cp: cm.allVars) {
+                        for (CodegenProperty cp : cm.allVars) {
                             addImportsForPropertyType(cm, cp);
                         }
                         removeSelfReferenceImports(cm);
@@ -506,9 +527,9 @@ public class TypeScriptAngularClientCodegen extends AbstractTypeScriptClientCode
 
     private void setChildDiscriminatorValue(CodegenModel parent, CodegenModel child) {
         if (
-            child.vendorExtensions.isEmpty() ||
-            !child.vendorExtensions.containsKey("x-discriminator-value")
-            ) {
+                child.vendorExtensions.isEmpty() ||
+                        !child.vendorExtensions.containsKey("x-discriminator-value")
+        ) {
 
             for (CodegenProperty prop : child.allVars) {
                 if (prop.baseName.equals(parent.discriminator.getPropertyName())) {
@@ -725,7 +746,7 @@ public class TypeScriptAngularClientCodegen extends AbstractTypeScriptClientCode
      *
      * @param level the wanted level
      */
-    public void setProvidedIn (String level) {
+    public void setProvidedIn(String level) {
         try {
             providedIn = PROVIDED_IN_LEVEL.valueOf(level);
         } catch (IllegalArgumentException e) {

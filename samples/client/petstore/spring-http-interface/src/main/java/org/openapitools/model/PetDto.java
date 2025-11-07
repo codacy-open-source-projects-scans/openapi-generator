@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Set;
 import org.openapitools.model.CategoryDto;
 import org.openapitools.model.TagDto;
+import org.springframework.lang.Nullable;
 import org.openapitools.jackson.nullable.JsonNullable;
 import java.time.OffsetDateTime;
 import jakarta.validation.constraints.NotNull;
@@ -27,12 +28,12 @@ import jakarta.annotation.Generated;
  */
 
 @JsonTypeName("Pet")
-@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", comments = "Generator version: 7.11.0-SNAPSHOT")
+@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", comments = "Generator version: 7.18.0-SNAPSHOT")
 public class PetDto {
 
-  private Long id;
+  private @Nullable Long id;
 
-  private CategoryDto category;
+  private @Nullable CategoryDto category;
 
   private String name;
 
@@ -52,7 +53,7 @@ public class PetDto {
     
     SOLD("sold");
 
-    private String value;
+    private final String value;
 
     StatusEnum(String value) {
       this.value = value;
@@ -80,13 +81,13 @@ public class PetDto {
   }
 
   @Deprecated
-  private StatusEnum status;
+  private @Nullable StatusEnum status;
 
   public PetDto() {
     super();
   }
 
-  public PetDto id(Long id) {
+  public PetDto id(@Nullable Long id) {
     this.id = id;
     return this;
   }
@@ -97,15 +98,15 @@ public class PetDto {
    */
   
   @JsonProperty("id")
-  public Long getId() {
+  public @Nullable Long getId() {
     return id;
   }
 
-  public void setId(Long id) {
+  public void setId(@Nullable Long id) {
     this.id = id;
   }
 
-  public PetDto category(CategoryDto category) {
+  public PetDto category(@Nullable CategoryDto category) {
     this.category = category;
     return this;
   }
@@ -116,11 +117,11 @@ public class PetDto {
    */
   
   @JsonProperty("category")
-  public CategoryDto getCategory() {
+  public @Nullable CategoryDto getCategory() {
     return category;
   }
 
-  public void setCategory(CategoryDto category) {
+  public void setCategory(@Nullable CategoryDto category) {
     this.category = category;
   }
 
@@ -198,7 +199,7 @@ public class PetDto {
     this.tags = tags;
   }
 
-  public PetDto status(StatusEnum status) {
+  public PetDto status(@Nullable StatusEnum status) {
     this.status = status;
     return this;
   }
@@ -211,7 +212,7 @@ public class PetDto {
   
   @JsonProperty("status")
   @Deprecated
-  public StatusEnum getStatus() {
+  public @Nullable StatusEnum getStatus() {
     return status;
   }
 
@@ -219,7 +220,7 @@ public class PetDto {
    * @deprecated
    */
   @Deprecated
-  public void setStatus(StatusEnum status) {
+  public void setStatus(@Nullable StatusEnum status) {
     this.status = status;
   }
 
