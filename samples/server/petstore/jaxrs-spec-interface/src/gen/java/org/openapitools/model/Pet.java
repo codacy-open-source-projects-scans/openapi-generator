@@ -24,13 +24,13 @@ import org.openapitools.jackson.nullable.JsonNullable;
  **/
 @ApiModel(description = "A pet for sale in the pet store")
 @JsonTypeName("Pet")
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaJAXRSSpecServerCodegen", comments = "Generator version: 7.23.0-SNAPSHOT")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaJAXRSSpecServerCodegen", comments = "Generator version: 7.27.0-SNAPSHOT")
 public class Pet  implements Serializable {
   private Long id;
   private Category category;
   private String name;
-  private @Valid List<String> photoUrls = new ArrayList<>();
-  private @Valid List<@Valid Tag> tags = new ArrayList<>();
+  private List<String> photoUrls = new ArrayList<>();
+  private List<@Valid Tag> tags = new ArrayList<>();
   public enum StatusEnum {
 
     AVAILABLE(String.valueOf("available")), PENDING(String.valueOf("pending")), SOLD(String.valueOf("sold"));
@@ -78,6 +78,7 @@ public class Pet  implements Serializable {
     }
 }
 
+  @Deprecated
   private StatusEnum status;
 
   public Pet() {
@@ -194,7 +195,7 @@ public class Pet  implements Serializable {
   
   @ApiModelProperty(value = "")
   @JsonProperty("tags")
-  @Valid public List<@Valid Tag> getTags() {
+  public List<@Valid Tag> getTags() {
     return tags;
   }
 
@@ -221,12 +222,18 @@ public class Pet  implements Serializable {
   }
   /**
    * pet status in the store
+   * @deprecated
    **/
+  @Deprecated
   public Pet status(StatusEnum status) {
     this.status = status;
     return this;
   }
 
+  /**
+   * @deprecated
+   */
+  @Deprecated
   
   @ApiModelProperty(value = "pet status in the store")
   @JsonProperty("status")
@@ -234,6 +241,10 @@ public class Pet  implements Serializable {
     return status;
   }
 
+  /**
+   * @deprecated
+   */
+  @Deprecated
   @JsonProperty("status")
   public void setStatus(StatusEnum status) {
     this.status = status;

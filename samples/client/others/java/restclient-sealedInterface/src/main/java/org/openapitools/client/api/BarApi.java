@@ -25,7 +25,7 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestClient.ResponseSpec;
 import org.springframework.web.client.RestClientResponseException;
 
-@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", comments = "Generator version: 7.23.0-SNAPSHOT")
+@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", comments = "Generator version: 7.27.0-SNAPSHOT")
 public class BarApi {
     private ApiClient apiClient;
 
@@ -54,7 +54,6 @@ public class BarApi {
      * @throws RestClientResponseException if an error occurs while attempting to invoke the API
      */
     private ResponseSpec createBarRequestCreation(@jakarta.annotation.Nonnull BarCreate barCreate) throws RestClientResponseException {
-        Object postBody = barCreate;
         // verify the required parameter 'barCreate' is set
         if (barCreate == null) {
             throw new RestClientResponseException("Missing the required parameter 'barCreate' when calling createBar", HttpStatus.BAD_REQUEST.value(), HttpStatus.BAD_REQUEST.getReasonPhrase(), null, null, null);
@@ -62,7 +61,7 @@ public class BarApi {
         // create path and map variables
         final Map<String, Object> pathParams = new HashMap<>();
 
-        final MultiValueMap<String, String> queryParams = new LinkedMultiValueMap<>();
+        final MultiValueMap<String, String> localVarQueryParams = new LinkedMultiValueMap<>();
         final HttpHeaders headerParams = new HttpHeaders();
         final MultiValueMap<String, String> cookieParams = new LinkedMultiValueMap<>();
         final MultiValueMap<String, Object> formParams = new LinkedMultiValueMap<>();
@@ -79,7 +78,7 @@ public class BarApi {
         String[] localVarAuthNames = new String[] {  };
 
         ParameterizedTypeReference<Bar> localVarReturnType = new ParameterizedTypeReference<>() {};
-        return apiClient.invokeAPI("/bar", HttpMethod.POST, pathParams, queryParams, postBody, headerParams, cookieParams, formParams, localVarAccept, localVarContentType, localVarAuthNames, localVarReturnType);
+        return apiClient.invokeAPI("/bar", HttpMethod.POST, pathParams, localVarQueryParams, barCreate, headerParams, cookieParams, formParams, localVarAccept, localVarContentType, localVarAuthNames, localVarReturnType);
     }
 
     /**

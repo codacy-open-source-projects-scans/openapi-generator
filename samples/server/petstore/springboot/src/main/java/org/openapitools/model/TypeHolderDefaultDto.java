@@ -2,6 +2,7 @@ package org.openapitools.model;
 
 import java.net.URI;
 import java.util.Objects;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -12,31 +13,35 @@ import java.util.List;
 import org.springframework.lang.Nullable;
 import org.openapitools.jackson.nullable.JsonNullable;
 import java.time.OffsetDateTime;
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.*;
+import javax.validation.Valid;
+import javax.validation.constraints.*;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 
 import java.util.*;
-import jakarta.annotation.Generated;
+import javax.annotation.Generated;
 
 /**
  * TypeHolderDefaultDto
  */
 
 @JsonTypeName("TypeHolderDefault")
-@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", comments = "Generator version: 7.23.0-SNAPSHOT")
+@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", comments = "Generator version: 7.27.0-SNAPSHOT")
 public class TypeHolderDefaultDto {
 
+  @JsonInclude(JsonInclude.Include.NON_NULL)
   private String stringItem = "what";
 
+  @JsonInclude(JsonInclude.Include.NON_NULL)
   private BigDecimal numberItem = new BigDecimal("1.234");
 
+  @JsonInclude(JsonInclude.Include.NON_NULL)
   private Integer integerItem = -2;
 
+  @JsonInclude(JsonInclude.Include.NON_NULL)
   private Boolean boolItem = true;
 
-  @Valid
+  @JsonInclude(JsonInclude.Include.NON_NULL)
   private List<Integer> arrayItem = new ArrayList<>(Arrays.asList(0, 1, 2, 3));
 
   public TypeHolderDefaultDto() {
@@ -145,7 +150,7 @@ public class TypeHolderDefaultDto {
 
   public TypeHolderDefaultDto addArrayItemItem(Integer arrayItemItem) {
     if (this.arrayItem == null) {
-      this.arrayItem = new ArrayList<>(Arrays.asList(0, 1, 2, 3));
+      this.arrayItem = new ArrayList<>();
     }
     this.arrayItem.add(arrayItemItem);
     return this;

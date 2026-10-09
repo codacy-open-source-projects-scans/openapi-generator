@@ -2,8 +2,11 @@ package org.openapitools.model
 
 import java.util.Objects
 import com.fasterxml.jackson.annotation.JsonCreator
+import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.annotation.JsonSetter
 import com.fasterxml.jackson.annotation.JsonValue
+import com.fasterxml.jackson.annotation.Nulls
 import javax.validation.constraints.DecimalMax
 import javax.validation.constraints.DecimalMin
 import javax.validation.constraints.Email
@@ -25,16 +28,34 @@ import javax.validation.Valid
  */
 data class Order(
 
+    @field:JsonInclude(JsonInclude.Include.NON_NULL)
+    @field:JsonSetter(nulls = Nulls.SKIP)
+    @param:JsonProperty("id")
     @get:JsonProperty("id") val id: kotlin.Long? = null,
 
+    @field:JsonInclude(JsonInclude.Include.NON_NULL)
+    @field:JsonSetter(nulls = Nulls.SKIP)
+    @param:JsonProperty("petId")
     @get:JsonProperty("petId") val petId: kotlin.Long? = null,
 
+    @field:JsonInclude(JsonInclude.Include.NON_NULL)
+    @field:JsonSetter(nulls = Nulls.SKIP)
+    @param:JsonProperty("quantity")
     @get:JsonProperty("quantity") val quantity: kotlin.Int? = null,
 
+    @field:JsonInclude(JsonInclude.Include.NON_NULL)
+    @field:JsonSetter(nulls = Nulls.SKIP)
+    @param:JsonProperty("shipDate")
     @get:JsonProperty("shipDate") val shipDate: java.time.OffsetDateTime? = null,
 
+    @field:JsonInclude(JsonInclude.Include.NON_NULL)
+    @field:JsonSetter(nulls = Nulls.SKIP)
+    @param:JsonProperty("status")
     @get:JsonProperty("status") val status: Order.Status? = null,
 
+    @field:JsonInclude(JsonInclude.Include.NON_NULL)
+    @field:JsonSetter(nulls = Nulls.SKIP)
+    @param:JsonProperty("complete")
     @get:JsonProperty("complete") val complete: kotlin.Boolean? = false
 ) : java.io.Serializable {
 
@@ -47,12 +68,12 @@ data class Order(
         placed("placed"),
         approved("approved"),
         delivered("delivered");
-
+    
         companion object {
             @JvmStatic
             @JsonCreator
             fun forValue(value: kotlin.String): Status {
-                return values().firstOrNull{it -> it.value == value}
+                return values().firstOrNull{ it.value == value }
                     ?: throw IllegalArgumentException("Unexpected value '$value' for enum 'Status'")
             }
         }

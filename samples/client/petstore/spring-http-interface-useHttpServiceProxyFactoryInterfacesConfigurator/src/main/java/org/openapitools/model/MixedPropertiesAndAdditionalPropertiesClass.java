@@ -2,6 +2,7 @@ package org.openapitools.model;
 
 import java.net.URI;
 import java.util.Objects;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import java.time.OffsetDateTime;
@@ -13,7 +14,9 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.lang.Nullable;
 import org.openapitools.jackson.nullable.JsonNullable;
 import java.time.OffsetDateTime;
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.*;
+import org.hibernate.validator.constraints.*;
 
 
 import java.util.*;
@@ -23,16 +26,18 @@ import jakarta.annotation.Generated;
  * MixedPropertiesAndAdditionalPropertiesClass
  */
 
-@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", comments = "Generator version: 7.23.0-SNAPSHOT")
+@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", comments = "Generator version: 7.27.0-SNAPSHOT")
 public class MixedPropertiesAndAdditionalPropertiesClass {
 
+  @JsonInclude(JsonInclude.Include.NON_NULL)
   private @Nullable UUID uuid;
 
+  @JsonInclude(JsonInclude.Include.NON_NULL)
   @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
   private @Nullable OffsetDateTime dateTime;
 
-  
-  private Map<String, Animal> map = new HashMap<>();
+  @JsonInclude(JsonInclude.Include.NON_NULL)
+  private Map<String, @Valid Animal> map = new HashMap<>();
 
   public MixedPropertiesAndAdditionalPropertiesClass uuid(@Nullable UUID uuid) {
     this.uuid = uuid;
@@ -43,7 +48,7 @@ public class MixedPropertiesAndAdditionalPropertiesClass {
    * Get uuid
    * @return uuid
    */
-  
+  @Valid 
   @JsonProperty("uuid")
   public @Nullable UUID getUuid() {
     return uuid;
@@ -63,7 +68,7 @@ public class MixedPropertiesAndAdditionalPropertiesClass {
    * Get dateTime
    * @return dateTime
    */
-  
+  @Valid 
   @JsonProperty("dateTime")
   public @Nullable OffsetDateTime getDateTime() {
     return dateTime;
@@ -74,7 +79,7 @@ public class MixedPropertiesAndAdditionalPropertiesClass {
     this.dateTime = dateTime;
   }
 
-  public MixedPropertiesAndAdditionalPropertiesClass map(Map<String, Animal> map) {
+  public MixedPropertiesAndAdditionalPropertiesClass map(Map<String, @Valid Animal> map) {
     this.map = map;
     return this;
   }
@@ -93,12 +98,12 @@ public class MixedPropertiesAndAdditionalPropertiesClass {
    */
   
   @JsonProperty("map")
-  public Map<String, Animal> getMap() {
+  public Map<String, @Valid Animal> getMap() {
     return map;
   }
 
   @JsonProperty("map")
-  public void setMap(Map<String, Animal> map) {
+  public void setMap(Map<String, @Valid Animal> map) {
     this.map = map;
   }
 

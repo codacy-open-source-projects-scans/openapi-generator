@@ -16,6 +16,7 @@
 
 package org.openapitools.codegen.languages;
 
+import com.fasterxml.jackson.databind.node.TextNode;
 import com.google.common.collect.ImmutableMap;
 import com.samskivert.mustache.Mustache;
 import io.swagger.v3.oas.models.Operation;
@@ -41,6 +42,8 @@ import java.util.stream.Collectors;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 import static org.openapitools.codegen.CodegenConstants.X_CSHARP_VALUE_TYPE;
 import static org.openapitools.codegen.utils.CamelizeOption.LOWERCASE_FIRST_LETTER;
+import static org.openapitools.codegen.utils.ModelUtils.hasAnyOf;
+import static org.openapitools.codegen.utils.ModelUtils.hasOneOf;
 import static org.openapitools.codegen.utils.StringUtils.camelize;
 import static org.openapitools.codegen.utils.StringUtils.underscore;
 
@@ -122,6 +125,7 @@ public class CSharpClientCodegen extends AbstractCSharpCodegen {
     protected boolean supportsFileParameters = Boolean.TRUE;
     protected boolean supportsDateOnly = Boolean.FALSE;
     protected boolean useIntForTimeout = Boolean.FALSE;
+    protected boolean throwOnAnyError = Boolean.FALSE;
 
     @Setter protected boolean validatable = Boolean.TRUE;
     @Setter protected boolean equatable = Boolean.FALSE;
@@ -132,6 +136,7 @@ public class CSharpClientCodegen extends AbstractCSharpCodegen {
     private static final String OPERATION_PARAMETER_SORTING_KEY = "operationParameterSorting";
     private static final String MODEL_PROPERTY_SORTING_KEY = "modelPropertySorting";
     private static final String USE_INT_FOR_TIMEOUT = "useIntForTimeout";
+    private static final String THROW_ON_ANY_ERROR = "throwOnAnyError";
 
     enum SortingMethod {
         DEFAULT,
@@ -248,6 +253,10 @@ public class CSharpClientCodegen extends AbstractCSharpCodegen {
         addOption(CSharpClientCodegen.USE_INT_FOR_TIMEOUT,
                 "Use int for Timeout (fall back to v7.9.0 templates). This option (for restsharp only) will be deprecated so please migrated to TimeSpan instead.",
                 String.valueOf(this.useIntForTimeout));
+
+        addSwitch(CSharpClientCodegen.THROW_ON_ANY_ERROR,
+                "Configure RestSharp to rethrow deserialization and transport errors instead of swallowing them into RestResponse.ErrorException (which the default ToApiResponse<T> discards as null Data). Recommended for production use to surface bugs that would otherwise be invisible. (restsharp only)",
+                this.throwOnAnyError);
 
         CliOption framework = new CliOption(
                 CodegenConstants.DOTNET_FRAMEWORK,
@@ -676,8 +685,47 @@ public class CSharpClientCodegen extends AbstractCSharpCodegen {
     public void postProcessModelProperty(CodegenModel model, CodegenProperty property) {
         postProcessPattern(property.pattern, property.vendorExtensions);
         postProcessEmitDefaultValue(property.vendorExtensions);
+        postProcessNotEnum(model, property);
 
         super.postProcessModelProperty(model, property);
+    }
+
+    /**
+     * Builds a C# boolean expression that is true when a property holds a value forbidden by a
+     * {@code not: { enum: [...] }} schema, and stores it as the {@code x-csharp-not-enum-comparison}
+     * vendor extension. Templates use it to reject the excluded values both at deserialization time
+     * (so oneOf/anyOf matching narrows correctly) and in {@code Validate()}.
+     */
+    private void postProcessNotEnum(CodegenModel model, CodegenProperty property) {
+        // Skip when the property itself is an enum: it is generated as a C# enum type, so the
+        // emitted `this.Name == "value"` string comparison would not compile.
+        if (property.isEnum || property.isEnumRef) {
+            return;
+        }
+        CodegenProperty not = property.getComposedSchemas() == null ? null : property.getComposedSchemas().getNot();
+        if (not == null || !not.isString || !(not.isEnum || not.isEnumRef)
+                || not.allowableValues == null || !(not.allowableValues.get("values") instanceof List)) {
+            return;
+        }
+
+        StringJoiner comparisons = new StringJoiner(" || ");
+        for (Object excluded : (List<?>) not.allowableValues.get("values")) {
+            String literal;
+            if (excluded == null) {
+                literal = "null";
+            } else if (excluded instanceof String) {
+                // A JSON string literal is also a valid C# string literal for these escapes.
+                literal = TextNode.valueOf((String) excluded).toString();
+            } else {
+                continue;
+            }
+            comparisons.add("this." + property.name + " == " + literal);
+        }
+
+        if (comparisons.length() > 0) {
+            property.vendorExtensions.put("x-csharp-not-enum-comparison", comparisons.toString());
+            model.vendorExtensions.put("x-csharp-has-not-enum", true);
+        }
     }
 
     @Override
@@ -871,6 +919,7 @@ public class CSharpClientCodegen extends AbstractCSharpCodegen {
         syncBooleanProperty(additionalProperties, "useSourceGeneration", this::setUseSourceGeneration, this.useSourceGeneration);
         syncBooleanProperty(additionalProperties, "supportsDateOnly", this::setSupportsDateOnly, this.supportsDateOnly);
         syncBooleanProperty(additionalProperties, "useIntForTimeout", this::setUseIntForTimeout, this.useIntForTimeout);
+        syncBooleanProperty(additionalProperties, "throwOnAnyError", this::setThrowOnAnyError, this.throwOnAnyError);
 
         final String testPackageName = testPackageName();
         String packageFolder = sourceFolder + File.separator + packageName;
@@ -1136,10 +1185,17 @@ public class CSharpClientCodegen extends AbstractCSharpCodegen {
 
         supportingFiles.add(new SupportingFile("IApi.mustache", sourceFolder + File.separator + packageName + File.separator + apiPackage(), getInterfacePrefix() + "Api.cs"));
 
+        String loggingFolder = sourceFolder + File.separator + packageName + File.separator + "Logging";
+        supportingFiles.add(new SupportingFile("libraries" + File.separator + GENERICHOST + File.separator + "RestLogEvents.mustache", loggingFolder, "RestLogEvents.cs"));
+
         // extensions
         String extensionsFolder = sourceFolder + File.separator + packageName + File.separator + "Extensions";
         supportingFiles.add(new SupportingFile("IHttpClientBuilderExtensions.mustache", extensionsFolder, "IHttpClientBuilderExtensions.cs"));
         supportingFiles.add(new SupportingFile("IHostBuilderExtensions.mustache", extensionsFolder, "IHostBuilderExtensions.cs"));
+        // IHostApplicationBuilder is only available on .NET 8 or later
+        if (additionalProperties.containsKey(NET_80_OR_LATER)) {
+            supportingFiles.add(new SupportingFile("IHostApplicationBuilderExtensions.mustache", extensionsFolder, "IHostApplicationBuilderExtensions.cs"));
+        }
         supportingFiles.add(new SupportingFile("IServiceCollectionExtensions.mustache", extensionsFolder, "IServiceCollectionExtensions.cs"));
 
         String apiTestFolder = testFolder + File.separator + testPackageName() + File.separator + apiPackage();
@@ -1242,6 +1298,10 @@ public class CSharpClientCodegen extends AbstractCSharpCodegen {
 
     public void setUseIntForTimeout(Boolean useIntForTimeout) {
         this.useIntForTimeout = useIntForTimeout;
+    }
+
+    public void setThrowOnAnyError(Boolean throwOnAnyError) {
+        this.throwOnAnyError = throwOnAnyError;
     }
 
     public void setSupportsRetry(Boolean supportsRetry) {
@@ -1674,12 +1734,12 @@ public class CSharpClientCodegen extends AbstractCSharpCodegen {
         for (ModelMap mo : objs.getModels()) {
             CodegenModel cm = mo.getModel();
 
-            if (cm.oneOf != null && !cm.oneOf.isEmpty() && cm.oneOf.remove("Null")) {
+            if (hasOneOf(cm) && cm.oneOf.remove("Null")) {
                 // if oneOf contains "null" type
                 cm.isNullable = true;
             }
 
-            if (cm.anyOf != null && !cm.anyOf.isEmpty() && cm.anyOf.remove("Null")) {
+            if (hasAnyOf(cm) && cm.anyOf.remove("Null")) {
                 // if anyOf contains "null" type
                 cm.isNullable = true;
             }
@@ -1762,14 +1822,16 @@ public class CSharpClientCodegen extends AbstractCSharpCodegen {
 
     @Override
     public void postProcess() {
-        System.out.println("################################################################################");
-        System.out.println("# Thanks for using OpenAPI Generator.                                          #");
-        System.out.println("# Please consider donation to help us maintain this project \uD83D\uDE4F                 #");
-        System.out.println("# https://opencollective.com/openapi_generator/donate                          #");
-        System.out.println("#                                                                              #");
-        System.out.println("# This generator's contributed by Jim Schubert (https://github.com/jimschubert)#");
-        System.out.println("# Please support his work directly via https://patreon.com/jimschubert \uD83D\uDE4F      #");
-        System.out.println("################################################################################");
+        if (!isQuietMode()) {
+            System.out.println("################################################################################");
+            System.out.println("# Thanks for using OpenAPI Generator.                                          #");
+            System.out.println("# Please consider donating to help us maintain this project \uD83D\uDE4F                 #");
+            System.out.println("# https://opencollective.com/openapi_generator/donate                          #");
+            System.out.println("#                                                                              #");
+            System.out.println("# This generator's contributed by Jim Schubert (https://github.com/jimschubert)#");
+            System.out.println("# Please support his work directly via https://patreon.com/jimschubert \uD83D\uDE4F      #");
+            System.out.println("################################################################################");
+        }
     }
 
     @Override

@@ -2,6 +2,7 @@ package org.openapitools.model;
 
 import java.net.URI;
 import java.util.Objects;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -23,13 +24,13 @@ import jakarta.annotation.Generated;
  */
 
 @JsonTypeName("AdditionalPropertiesClass")
-@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", comments = "Generator version: 7.23.0-SNAPSHOT")
+@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", comments = "Generator version: 7.27.0-SNAPSHOT")
 public class AdditionalPropertiesClassDto {
 
-  @Valid
+  @JsonInclude(JsonInclude.Include.NON_NULL)
   private Map<String, String> mapProperty = new HashMap<>();
 
-  @Valid
+  @JsonInclude(JsonInclude.Include.NON_NULL)
   private Map<String, Map<String, String>> mapOfMapProperty = new HashMap<>();
 
   public AdditionalPropertiesClassDto mapProperty(Map<String, String> mapProperty) {
@@ -78,7 +79,7 @@ public class AdditionalPropertiesClassDto {
    * Get mapOfMapProperty
    * @return mapOfMapProperty
    */
-  @Valid 
+  
   @Schema(name = "map_of_map_property", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
   @JsonProperty("map_of_map_property")
   public Map<String, Map<String, String>> getMapOfMapProperty() {

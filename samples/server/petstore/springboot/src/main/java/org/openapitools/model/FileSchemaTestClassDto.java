@@ -2,6 +2,7 @@ package org.openapitools.model;
 
 import java.net.URI;
 import java.util.Objects;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -12,25 +13,26 @@ import org.openapitools.model.FileDto;
 import org.springframework.lang.Nullable;
 import org.openapitools.jackson.nullable.JsonNullable;
 import java.time.OffsetDateTime;
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.*;
+import javax.validation.Valid;
+import javax.validation.constraints.*;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 
 import java.util.*;
-import jakarta.annotation.Generated;
+import javax.annotation.Generated;
 
 /**
  * FileSchemaTestClassDto
  */
 
 @JsonTypeName("FileSchemaTestClass")
-@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", comments = "Generator version: 7.23.0-SNAPSHOT")
+@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", comments = "Generator version: 7.27.0-SNAPSHOT")
 public class FileSchemaTestClassDto {
 
+  @JsonInclude(JsonInclude.Include.NON_NULL)
   private @Nullable FileDto file;
 
-  @Valid
+  @JsonInclude(JsonInclude.Include.NON_NULL)
   private List<@Valid FileDto> files = new ArrayList<>();
 
   public FileSchemaTestClassDto file(@Nullable FileDto file) {
@@ -71,7 +73,7 @@ public class FileSchemaTestClassDto {
    * Get files
    * @return files
    */
-  @Valid 
+  
   @Schema(name = "files", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
   @JsonProperty("files")
   public List<@Valid FileDto> getFiles() {

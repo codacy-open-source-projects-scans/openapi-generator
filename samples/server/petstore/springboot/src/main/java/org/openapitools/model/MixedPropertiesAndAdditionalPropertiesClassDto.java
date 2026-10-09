@@ -2,6 +2,7 @@ package org.openapitools.model;
 
 import java.net.URI;
 import java.util.Objects;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -14,29 +15,31 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.lang.Nullable;
 import org.openapitools.jackson.nullable.JsonNullable;
 import java.time.OffsetDateTime;
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.*;
+import javax.validation.Valid;
+import javax.validation.constraints.*;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 
 import java.util.*;
-import jakarta.annotation.Generated;
+import javax.annotation.Generated;
 
 /**
  * MixedPropertiesAndAdditionalPropertiesClassDto
  */
 
 @JsonTypeName("MixedPropertiesAndAdditionalPropertiesClass")
-@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", comments = "Generator version: 7.23.0-SNAPSHOT")
+@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", comments = "Generator version: 7.27.0-SNAPSHOT")
 public class MixedPropertiesAndAdditionalPropertiesClassDto {
 
+  @JsonInclude(JsonInclude.Include.NON_NULL)
   private @Nullable UUID uuid;
 
+  @JsonInclude(JsonInclude.Include.NON_NULL)
   @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
   private @Nullable OffsetDateTime dateTime;
 
-  @Valid
-  private Map<String, AnimalDto> map = new HashMap<>();
+  @JsonInclude(JsonInclude.Include.NON_NULL)
+  private Map<String, @Valid AnimalDto> map = new HashMap<>();
 
   public MixedPropertiesAndAdditionalPropertiesClassDto uuid(@Nullable UUID uuid) {
     this.uuid = uuid;
@@ -80,7 +83,7 @@ public class MixedPropertiesAndAdditionalPropertiesClassDto {
     this.dateTime = dateTime;
   }
 
-  public MixedPropertiesAndAdditionalPropertiesClassDto map(Map<String, AnimalDto> map) {
+  public MixedPropertiesAndAdditionalPropertiesClassDto map(Map<String, @Valid AnimalDto> map) {
     this.map = map;
     return this;
   }
@@ -97,15 +100,15 @@ public class MixedPropertiesAndAdditionalPropertiesClassDto {
    * Get map
    * @return map
    */
-  @Valid 
+  
   @Schema(name = "map", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
   @JsonProperty("map")
-  public Map<String, AnimalDto> getMap() {
+  public Map<String, @Valid AnimalDto> getMap() {
     return map;
   }
 
   @JsonProperty("map")
-  public void setMap(Map<String, AnimalDto> map) {
+  public void setMap(Map<String, @Valid AnimalDto> map) {
     this.map = map;
   }
 

@@ -179,6 +179,72 @@ public class TypeScriptAxiosClientCodegenTest {
         TestUtils.assertFileContains(file, "'nicknames'?: Array<string>");
     }
 
+    @Test(description = "Nullable oneOf references do not make other uses of the referenced schema nullable")
+    public void testNullableReferenceDoesNotLeakIntoModelProperty() throws Exception {
+        final File output = Files.createTempDirectory("typescript_axios_nullable_reference_").toFile();
+        output.deleteOnExit();
+
+        final CodegenConfigurator configurator = new CodegenConfigurator()
+                .setGeneratorName("typescript-axios")
+                .setInputSpec("src/test/resources/3_1/issue_23340.yaml")
+                .setOutputDir(output.getAbsolutePath().replace("\\", "/"));
+
+        final List<File> files = new DefaultGenerator().opts(configurator.toClientOptInput()).generate();
+        files.forEach(File::deleteOnExit);
+
+        Path api = Paths.get(output + "/api.ts");
+        TestUtils.assertFileContains(api,
+                "export interface TitleGroupHierarchyLite {",
+                "'content_type': ContentType;");
+        TestUtils.assertFileNotContains(api, "'content_type': ContentType | null;");
+        TestUtils.assertFileContains(api, "search: async (contentType?: ContentType | null");
+    }
+
+    @Test(description = "Verify multipart file arrays use repeated form fields")
+    public void testMultipartFileArrayUsesRepeatedFormFields() throws Exception {
+        final File output = Files.createTempDirectory("typescript_axios_multipart_file_array_").toFile();
+        output.deleteOnExit();
+
+        final CodegenConfigurator configurator = new CodegenConfigurator()
+                .setGeneratorName("typescript-axios")
+                .setInputSpec("src/test/resources/3_0/form-multipart-binary-array.yaml")
+                .setOutputDir(output.getAbsolutePath().replace("\\", "/"));
+
+        final ClientOptInput clientOptInput = configurator.toClientOptInput();
+        final DefaultGenerator generator = new DefaultGenerator();
+        final List<File> files = generator.opts(clientOptInput).generate();
+        files.forEach(File::deleteOnExit);
+
+        Path api = Paths.get(output + "/api.ts");
+        TestUtils.assertFileExists(api);
+        TestUtils.assertFileContains(api, "files?: Array<File>");
+        TestUtils.assertFileContains(api, "files.forEach((element) => {");
+        TestUtils.assertFileContains(api, "localVarFormParams.append('files', element as any);");
+        TestUtils.assertFileNotContains(api, "files.join(COLLECTION_FORMATS.csv)");
+    }
+
+    @Test
+    public void generatesNullUnionsForOpenApi31NullableContainers() throws Exception {
+        final File output = Files.createTempDirectory("typescript_axios_nullable_container_types_").toFile();
+        output.deleteOnExit();
+
+        final CodegenConfigurator configurator = new CodegenConfigurator()
+                .setGeneratorName("typescript-axios")
+                .setInputSpec("src/test/resources/3_1/typescript-axios/nullable-container-types.yaml")
+                .setOutputDir(output.getAbsolutePath().replace("\\", "/"));
+
+        final ClientOptInput clientOptInput = configurator.toClientOptInput();
+        final DefaultGenerator generator = new DefaultGenerator();
+        final List<File> files = generator.opts(clientOptInput).generate();
+        files.forEach(File::deleteOnExit);
+
+        Path file = Paths.get(output + "/api.ts");
+
+        TestUtils.assertFileContains(file, "'validation'?: { [key: string]: string; } | null;");
+        TestUtils.assertFileContains(file, "'requirements'?: Array<string> | null;");
+        TestUtils.assertFileContains(file, "'settings': MappingItemResourceSettings | null;");
+    }
+
     @Test
     public void generatesTrailingCommasInAsConstEnumObjects() throws Exception {
         final File output = Files.createTempDirectory("typescript_axios_trailing_commas_").toFile();
@@ -213,5 +279,30 @@ public class TypeScriptAxiosClientCodegenTest {
                         "    Efg: '-efg',\n" +
                         "    Xyz: '(xyz)',\n" +
                         "} as const;");
+    }
+
+
+    @Test(description = "Generated package.json supports TypeScript 6")
+    public void testGeneratedPackageJsonSupportsTypeScript6() throws Exception {
+        final File output = Files.createTempDirectory("typescript_axios_typescript_6_").toFile();
+        output.deleteOnExit();
+
+        final CodegenConfigurator configurator = new CodegenConfigurator()
+                .setGeneratorName("typescript-axios")
+                .setInputSpec("src/test/resources/3_0/petstore.yaml")
+                .addAdditionalProperty("npmName", "@openapi/typescript-axios-petstore")
+                .addAdditionalProperty("snapshot", false)
+                .addAdditionalProperty("npmVersion", "1.0.0-SNAPSHOT")
+                .addAdditionalProperty("supportsES6", true)
+                .setOutputDir(output.getAbsolutePath().replace("\\", "/"));
+
+        final List<File> files = new DefaultGenerator().opts(configurator.toClientOptInput()).generate();
+        files.forEach(File::deleteOnExit);
+
+        TestUtils.assertFileContains(Paths.get(output + "/package.json"),
+                "\"typescript\": \"^4.0 || ^5.0 || ^6.0\"");
+        assertThat(Files.readString(Paths.get(output + "/tsconfig.json")))
+                .doesNotContain("\"moduleResolution\": \"node\"");
+
     }
 }

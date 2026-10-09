@@ -1,11 +1,23 @@
 #![allow(unused_qualifications)]
 
+#[cfg(feature = "server")]
 use http::HeaderValue;
 use validator::Validate;
 
 #[cfg(feature = "server")]
 use crate::header;
 use crate::{models, types::*};
+
+#[cfg(feature = "server")]
+#[allow(dead_code)]
+pub type SSE = std::pin::Pin<
+    std::boxed::Box<
+        dyn futures_util::Stream<
+                Item = std::result::Result<axum::response::sse::Event, std::convert::Infallible>,
+            > + std::marker::Send
+            + std::marker::Sync,
+    >,
+>;
 
 #[allow(dead_code)]
 fn from_validation_error(e: validator::ValidationError) -> validator::ValidationErrors {
@@ -14,9 +26,21 @@ fn from_validation_error(e: validator::ValidationError) -> validator::Validation
     errs
 }
 
+/// XSS detection relies on `ammonia`, which is only pulled in by the `server` feature.
+/// Without it (e.g. models-only WASM builds), values are never flagged as HTML.
+#[cfg(feature = "server")]
+fn contains_html(v: &str) -> bool {
+    ammonia::is_html(v)
+}
+
+#[cfg(not(feature = "server"))]
+fn contains_html(_v: &str) -> bool {
+    false
+}
+
 #[allow(dead_code)]
 pub fn check_xss_string(v: &str) -> std::result::Result<(), validator::ValidationError> {
-    if ammonia::is_html(v) {
+    if contains_html(v) {
         std::result::Result::Err(validator::ValidationError::new("xss detected"))
     } else {
         std::result::Result::Ok(())
@@ -25,7 +49,7 @@ pub fn check_xss_string(v: &str) -> std::result::Result<(), validator::Validatio
 
 #[allow(dead_code)]
 pub fn check_xss_vec_string(v: &[String]) -> std::result::Result<(), validator::ValidationError> {
-    if v.iter().any(|i| ammonia::is_html(i)) {
+    if v.iter().any(|i| contains_html(i)) {
         std::result::Result::Err(validator::ValidationError::new("xss detected"))
     } else {
         std::result::Result::Ok(())
@@ -36,7 +60,7 @@ pub fn check_xss_vec_string(v: &[String]) -> std::result::Result<(), validator::
 pub fn check_xss_map_string(
     v: &std::collections::HashMap<String, String>,
 ) -> std::result::Result<(), validator::ValidationError> {
-    if v.keys().any(|k| ammonia::is_html(k)) || v.values().any(|v| ammonia::is_html(v)) {
+    if v.keys().any(|k| contains_html(k)) || v.values().any(|v| contains_html(v)) {
         std::result::Result::Err(validator::ValidationError::new("xss detected"))
     } else {
         std::result::Result::Ok(())
@@ -50,7 +74,7 @@ pub fn check_xss_map_nested<T>(
 where
     T: validator::Validate,
 {
-    if v.keys().any(|k| ammonia::is_html(k)) || v.values().any(|v| v.validate().is_err()) {
+    if v.keys().any(|k| contains_html(k)) || v.values().any(|v| v.validate().is_err()) {
         std::result::Result::Err(validator::ValidationError::new("xss detected"))
     } else {
         std::result::Result::Ok(())
@@ -61,7 +85,7 @@ where
 pub fn check_xss_map<T>(
     v: &std::collections::HashMap<String, T>,
 ) -> std::result::Result<(), validator::ValidationError> {
-    if v.keys().any(|k| ammonia::is_html(k)) {
+    if v.keys().any(|k| contains_html(k)) {
         std::result::Result::Err(validator::ValidationError::new("xss detected"))
     } else {
         std::result::Result::Ok(())
@@ -242,9 +266,7 @@ impl ::std::str::FromStr for AdditionalPropertiesReferencedAnyOfObject {
     type Err = &'static str;
 
     fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        std::result::Result::Err(
-            "Parsing additionalProperties for AdditionalPropertiesReferencedAnyOfObject is not supported",
-        )
+        std::result::Result::Err("Parsing additionalProperties for AdditionalPropertiesReferencedAnyOfObject is not supported")
     }
 }
 
@@ -388,7 +410,7 @@ impl std::str::FromStr for AdditionalPropertiesWithNullable {
                 None => {
                     return std::result::Result::Err(
                         "Missing value while parsing AdditionalPropertiesWithNullable".to_string(),
-                    );
+                    )
                 }
             };
 
@@ -672,10 +694,10 @@ impl AnotherXmlObject {
 /// Should be implemented in a serde serializer
 impl std::fmt::Display for AnotherXmlObject {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let params: Vec<Option<String>> =
-            vec![self.inner_string.as_ref().map(|inner_string| {
-                ["inner_string".to_string(), inner_string.to_string()].join(",")
-            })];
+        let params: Vec<Option<String>> = vec![self
+            .inner_string
+            .as_ref()
+            .map(|inner_string| ["inner_string".to_string(), inner_string.to_string()].join(","))];
 
         write!(
             f,
@@ -711,7 +733,7 @@ impl std::str::FromStr for AnotherXmlObject {
                 None => {
                     return std::result::Result::Err(
                         "Missing value while parsing AnotherXmlObject".to_string(),
-                    );
+                    )
                 }
             };
 
@@ -725,7 +747,7 @@ impl std::str::FromStr for AnotherXmlObject {
                     _ => {
                         return std::result::Result::Err(
                             "Unexpected key while parsing AnotherXmlObject".to_string(),
-                        );
+                        )
                     }
                 }
             }
@@ -962,7 +984,7 @@ impl std::str::FromStr for AnyOfProperty {
                 None => {
                     return std::result::Result::Err(
                         "Missing value while parsing AnyOfProperty".to_string(),
-                    );
+                    )
                 }
             };
 
@@ -982,7 +1004,7 @@ impl std::str::FromStr for AnyOfProperty {
                     _ => {
                         return std::result::Result::Err(
                             "Unexpected key while parsing AnyOfProperty".to_string(),
-                        );
+                        )
                     }
                 }
             }
@@ -1116,7 +1138,7 @@ impl std::str::FromStr for DuplicateXmlObject {
                 None => {
                     return std::result::Result::Err(
                         "Missing value while parsing DuplicateXmlObject".to_string(),
-                    );
+                    )
                 }
             };
 
@@ -1135,7 +1157,7 @@ impl std::str::FromStr for DuplicateXmlObject {
                     _ => {
                         return std::result::Result::Err(
                             "Unexpected key while parsing DuplicateXmlObject".to_string(),
-                        );
+                        )
                     }
                 }
             }
@@ -1418,7 +1440,7 @@ impl std::str::FromStr for FormTestRequest {
                 None => {
                     return std::result::Result::Err(
                         "Missing value while parsing FormTestRequest".to_string(),
-                    );
+                    )
                 }
             };
 
@@ -1429,7 +1451,7 @@ impl std::str::FromStr for FormTestRequest {
                         return std::result::Result::Err(
                             "Parsing a container in this style is not supported in FormTestRequest"
                                 .to_string(),
-                        );
+                        )
                     }
                     #[allow(clippy::redundant_clone)]
                     "enum_field" => intermediate_rep.enum_field.push(
@@ -1438,7 +1460,7 @@ impl std::str::FromStr for FormTestRequest {
                     _ => {
                         return std::result::Result::Err(
                             "Unexpected key while parsing FormTestRequest".to_string(),
-                        );
+                        )
                     }
                 }
             }
@@ -1555,11 +1577,10 @@ impl MultigetGet201Response {
 /// Should be implemented in a serde serializer
 impl std::fmt::Display for MultigetGet201Response {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let params: Vec<Option<String>> = vec![
-            self.foo
-                .as_ref()
-                .map(|foo| ["foo".to_string(), foo.to_string()].join(",")),
-        ];
+        let params: Vec<Option<String>> = vec![self
+            .foo
+            .as_ref()
+            .map(|foo| ["foo".to_string(), foo.to_string()].join(","))];
 
         write!(
             f,
@@ -1595,7 +1616,7 @@ impl std::str::FromStr for MultigetGet201Response {
                 None => {
                     return std::result::Result::Err(
                         "Missing value while parsing MultigetGet201Response".to_string(),
-                    );
+                    )
                 }
             };
 
@@ -1609,7 +1630,7 @@ impl std::str::FromStr for MultigetGet201Response {
                     _ => {
                         return std::result::Result::Err(
                             "Unexpected key while parsing MultigetGet201Response".to_string(),
-                        );
+                        )
                     }
                 }
             }
@@ -2122,7 +2143,7 @@ impl std::str::FromStr for NullableTest {
                 None => {
                     return std::result::Result::Err(
                         "Missing value while parsing NullableTest".to_string(),
-                    );
+                    )
                 }
             };
 
@@ -2149,30 +2170,30 @@ impl std::str::FromStr for NullableTest {
                         return std::result::Result::Err(
                             "Parsing a container in this style is not supported in NullableTest"
                                 .to_string(),
-                        );
+                        )
                     }
                     "min_item_test" => {
                         return std::result::Result::Err(
                             "Parsing a container in this style is not supported in NullableTest"
                                 .to_string(),
-                        );
+                        )
                     }
                     "max_item_test" => {
                         return std::result::Result::Err(
                             "Parsing a container in this style is not supported in NullableTest"
                                 .to_string(),
-                        );
+                        )
                     }
                     "min_max_item_test" => {
                         return std::result::Result::Err(
                             "Parsing a container in this style is not supported in NullableTest"
                                 .to_string(),
-                        );
+                        )
                     }
                     _ => {
                         return std::result::Result::Err(
                             "Unexpected key while parsing NullableTest".to_string(),
-                        );
+                        )
                     }
                 }
             }
@@ -2322,7 +2343,7 @@ impl std::str::FromStr for ObjectHeader {
                 None => {
                     return std::result::Result::Err(
                         "Missing value while parsing ObjectHeader".to_string(),
-                    );
+                    )
                 }
             };
 
@@ -2340,7 +2361,7 @@ impl std::str::FromStr for ObjectHeader {
                     _ => {
                         return std::result::Result::Err(
                             "Unexpected key while parsing ObjectHeader".to_string(),
-                        );
+                        )
                     }
                 }
             }
@@ -2473,7 +2494,7 @@ impl std::str::FromStr for ObjectParam {
                 None => {
                     return std::result::Result::Err(
                         "Missing value while parsing ObjectParam".to_string(),
-                    );
+                    )
                 }
             };
 
@@ -2491,7 +2512,7 @@ impl std::str::FromStr for ObjectParam {
                     _ => {
                         return std::result::Result::Err(
                             "Unexpected key while parsing ObjectParam".to_string(),
-                        );
+                        )
                     }
                 }
             }
@@ -2640,7 +2661,7 @@ impl std::str::FromStr for ObjectUntypedProps {
                 None => {
                     return std::result::Result::Err(
                         "Missing value while parsing ObjectUntypedProps".to_string(),
-                    );
+                    )
                 }
             };
 
@@ -2790,7 +2811,7 @@ impl std::str::FromStr for ObjectWithArrayOfObjects {
                 None => {
                     return std::result::Result::Err(
                         "Missing value while parsing ObjectWithArrayOfObjects".to_string(),
-                    );
+                    )
                 }
             };
 
@@ -3453,7 +3474,7 @@ impl std::str::FromStr for XmlObject {
                 None => {
                     return std::result::Result::Err(
                         "Missing value while parsing XmlObject".to_string(),
-                    );
+                    )
                 }
             };
 
@@ -3471,7 +3492,7 @@ impl std::str::FromStr for XmlObject {
                     _ => {
                         return std::result::Result::Err(
                             "Unexpected key while parsing XmlObject".to_string(),
-                        );
+                        )
                     }
                 }
             }

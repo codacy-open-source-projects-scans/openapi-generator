@@ -2,6 +2,7 @@ package org.openapitools.model;
 
 import java.net.URI;
 import java.util.Objects;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
@@ -26,19 +27,22 @@ import jakarta.annotation.Generated;
  */
 
 @Schema(name = "Pet", description = "A pet for sale in the pet store")
-@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", comments = "Generator version: 7.23.0-SNAPSHOT")
+@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", comments = "Generator version: 7.27.0-SNAPSHOT")
 public class Pet {
 
+  @JsonInclude(JsonInclude.Include.NON_NULL)
   private @Nullable Long id;
 
+  @JsonInclude(JsonInclude.Include.NON_NULL)
   private @Nullable Category category;
 
+  @JsonInclude(JsonInclude.Include.NON_NULL)
   private String name;
 
-  @Valid
+  @JsonInclude(JsonInclude.Include.NON_NULL)
   private List<String> photoUrls = new ArrayList<>();
 
-  @Valid
+  @JsonInclude(JsonInclude.Include.NON_NULL)
   private List<@Valid Tag> tags = new ArrayList<>();
 
   /**
@@ -78,6 +82,7 @@ public class Pet {
     }
   }
 
+  @JsonInclude(JsonInclude.Include.NON_NULL)
   private @Nullable StatusEnum status;
 
   public Pet() {
@@ -201,7 +206,7 @@ public class Pet {
    * Get tags
    * @return tags
    */
-  @Valid 
+  
   @Schema(name = "tags", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
   @JsonProperty("tags")
   public List<@Valid Tag> getTags() {

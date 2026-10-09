@@ -5,7 +5,10 @@
 //
 
 import Foundation
-#if !os(macOS)
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
+#if canImport(MobileCoreServices)
 import MobileCoreServices
 #endif
 #if canImport(UniformTypeIdentifiers)
@@ -198,7 +201,12 @@ open class URLSessionRequestBuilder<T: Sendable>: RequestBuilder<T>, @unchecked 
                             return
                         }
 
-                        self.processRequestResponse(urlRequest: modifiedRequest, urlSession: urlSession, data: data, httpResponse: httpResponse, error: error, completion: completion)
+                        let responseQueue = self.apiConfiguration.apiResponseQueue
+                        self.processRequestResponse(urlRequest: modifiedRequest, urlSession: urlSession, data: data, httpResponse: httpResponse, error: error) { result in
+                            responseQueue.async {
+                                completion(result)
+                            }
+                        }
                     }
 
                     self.onProgressReady?(dataTask.progress)
@@ -536,7 +544,9 @@ private class FormDataEncoding: ParameterEncoding {
                         urlRequest: urlRequest,
                         boundary: boundary,
                         name: key,
-                        data: data
+                        data: data,
+                        fileName: key,
+                        mimeType: "application/octet-stream"
                     )
 
                 case let uuid as UUID:
@@ -600,7 +610,7 @@ private class FormDataEncoding: ParameterEncoding {
         return urlRequest
     }
 
-    private func configureDataUploadRequest(urlRequest: URLRequest, boundary: String, name: String, data: Data) -> URLRequest {
+    private func configureDataUploadRequest(urlRequest: URLRequest, boundary: String, name: String, data: Data, fileName: String? = nil, mimeType: String? = nil) -> URLRequest {
 
         var urlRequest = urlRequest
 
@@ -615,7 +625,14 @@ private class FormDataEncoding: ParameterEncoding {
         body.append("--\(boundary)\r\n")
 
         // Value headers.
-        body.append("Content-Disposition: form-data; name=\"\(name)\"\r\n")
+        if let fileName {
+            body.append("Content-Disposition: form-data; name=\"\(name)\"; filename=\"\(fileName)\"\r\n")
+        } else {
+            body.append("Content-Disposition: form-data; name=\"\(name)\"\r\n")
+        }
+        if let mimeType {
+            body.append("Content-Type: \(mimeType)\r\n")
+        }
 
         // Separate headers and body.
         body.append("\r\n")
@@ -637,15 +654,14 @@ private class FormDataEncoding: ParameterEncoding {
             if let utType = UTType(filenameExtension: pathExtension) {
                 return utType.preferredMIMEType ?? "application/octet-stream"
             }
-            #else
-            return "application/octet-stream" 
             #endif
         } else {
+            #if canImport(MobileCoreServices)
             if let uti = UTTypeCreatePreferredIdentifierForTag(kUTTagClassFilenameExtension, pathExtension as NSString, nil)?.takeRetainedValue(),
                     let mimetype = UTTypeCopyPreferredTagWithClass(uti, kUTTagClassMIMEType)?.takeRetainedValue() {
                 return mimetype as String
             }
-            return "application/octet-stream"
+            #endif
         }
         return "application/octet-stream"
     }

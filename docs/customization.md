@@ -471,6 +471,8 @@ java -jar modules/openapi-generator-cli/target/openapi-generator-cli.jar generat
 ```
 will name the API method as `returnPetById` instead of `getPetById` obtained from OpenAPI doc/spec.
 
+:warning: **NOTE: these mapping options do not perform any validation/change on the input and therefore output (e.g. auto-generated SDK) may not work (e.g. input is a reserved keyword in a particular programming language causing compilation errors). As usual, please test the output to ensure it's working as expected.**
+
 ## Schema Mapping
 
 One can map the schema to something else (e.g. external objects/models outside of the package) using the `schemaMappings` option, e.g. in CLI
@@ -644,6 +646,25 @@ Example:
 java -jar modules/openapi-generator-cli/target/openapi-generator-cli.jar generate -g java -i modules/openapi-generator/src/test/resources/3_0/required-properties.yaml -o /tmp/java-okhttp/ --openapi-normalizer NORMALIZER_CLASS=org.openapitools.codegen.OpenAPINormalizerTest$RemoveRequiredNormalizer
 ```
 
+The class must be resolvable on the generation runtime classpath. When using the
+[Gradle plugin](https://github.com/OpenAPITools/openapi-generator/tree/master/modules/openapi-generator-gradle-plugin),
+a custom `NORMALIZER_CLASS` that isn't already on the plugin's own classpath must be added via the
+`openApiGeneratorExtra` dependency configuration (or the `generatorClasspath` property) so it is forwarded to the
+code generation worker in both `workerIsolation` modes (`process` and `classloader`) - see the plugin's README for
+details.
+
+Similarly, a custom generator selected by name or fully qualified class name must be resolvable on the generation
+runtime classpath. With the Gradle plugin, add its jar or project output to `openApiGeneratorExtra` (preferred) or
+`generatorClasspath` so it is forwarded to the code generation worker in both `process` and `classloader`
+`workerIsolation` modes.
+
+- `LOOSE_NULL_DEFINITIONS`: When set to true, allow more schema definitions in OpenAPI 3.0 spec to be the same as `null` in OpenAPI 3.1 spec by setting ModelUtils.looseNullDefinitions to true.
+
+Example:
+```
+java -jar modules/openapi-generator-cli/target/openapi-generator-cli.jar generate -g java -i modules/openapi-generator/src/test/resources/bugs/issue_anyof_bare_nullable_object.yaml -o /tmp/java-okhttp/ --openapi-normalizer LOOSE_NULL_DEFINITIONS=true
+```
+
 - `REMOVE_PROPERTIES_FROM_TYPE_OTHER_THAN_OBJECT`: When set to true, remove the "properties" of a schema with type other than "object".
 
 Example:
@@ -752,6 +773,28 @@ Into this securityScheme:
     api_key:
       scheme: bearer
       type: http
+```
+
+- `SECURITY_SCHEMES_FILTER`
+
+The `SECURITY_SCHEMES_FILTER` parameter allows selective inclusion of API security schemes based on specific criteria. It removes security schemes that do **not** match the specified values, preventing them from being generated. All references to removed security schemes also deleted. Multiple filters can be separated by a semicolon.
+
+### Available Filters
+
+- **`key`**
+  When set to `key:api_key|http_bearer`, security schemes **not** matching `api_key` or `http_bearer` will be marked as internal (`x-internal: true`), and excluded from generation. Matching operations will have `x-internal: false`.
+
+- **`type`**
+  When set to `type:apiKey|http`, security schemes **not** using `apiKey` or `http` types will be marked as internal (`x-internal: true`), preventing their generation.
+
+### Example Usage
+
+```sh
+java -jar modules/openapi-generator-cli/target/openapi-generator-cli.jar generate \
+  -g java \
+  -i modules/openapi-generator/src/test/resources/3_0/petstore.yaml \
+  -o /tmp/java-okhttp/ \
+  --openapi-normalizer SECURITY_SCHEMES_FILTER="key:api_key|http_bearer ; type:oauth2"
 ```
 
 - `SORT_MODEL_PROPERTIES`: When set to true, model properties will be sorted alphabetically by name. This ensures deterministic code generation output regardless of property ordering in the source spec.

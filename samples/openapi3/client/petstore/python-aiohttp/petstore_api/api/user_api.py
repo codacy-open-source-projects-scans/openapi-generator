@@ -33,9 +33,28 @@ class UserApi:
     """
 
     def __init__(self, api_client=None) -> None:
+        # api_client remains publicly assignable. Retain the client acquired at
+        # construction so reassignment cannot transfer or discard ownership.
         if api_client is None:
-            api_client = ApiClient.get_default()
+            api_client, owns_api_client = ApiClient._get_default_or_new()
+        else:
+            owns_api_client = False
         self.api_client = api_client
+        self._owned_api_client: Optional[ApiClient] = (
+            api_client if owns_api_client else None
+        )
+
+    async def close(self) -> None:
+        owned_api_client = self._owned_api_client
+        self._owned_api_client = None
+        if owned_api_client is not None:
+            await owned_api_client.close()
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc_value, traceback):
+        await self.close()
 
 
     @validate_call
@@ -254,7 +273,7 @@ class UserApi:
 
         _path_params: Dict[str, str] = {}
         _query_params: List[Tuple[str, str]] = []
-        _header_params: Dict[str, Optional[str]] = _headers or {}
+        _header_params: Dict[str, Any] = self.api_client._merge_headers(_headers)
         _form_params: List[Tuple[str, str]] = []
         _files: Dict[
             str, Union[str, bytes, List[str], List[bytes], List[Tuple[str, bytes]]]
@@ -273,7 +292,7 @@ class UserApi:
 
         # set the HTTP header `Content-Type`
         if _content_type:
-            _header_params['Content-Type'] = _content_type
+            self.api_client._set_header(_header_params, 'Content-Type', _content_type)
         else:
             _default_content_type = (
                 self.api_client.select_header_content_type(
@@ -283,7 +302,7 @@ class UserApi:
                 )
             )
             if _default_content_type is not None:
-                _header_params['Content-Type'] = _default_content_type
+                self.api_client._set_header(_header_params, 'Content-Type', _default_content_type)
 
         # authentication setting
         _auth_settings: List[str] = [
@@ -518,7 +537,7 @@ class UserApi:
 
         _path_params: Dict[str, str] = {}
         _query_params: List[Tuple[str, str]] = []
-        _header_params: Dict[str, Optional[str]] = _headers or {}
+        _header_params: Dict[str, Any] = self.api_client._merge_headers(_headers)
         _form_params: List[Tuple[str, str]] = []
         _files: Dict[
             str, Union[str, bytes, List[str], List[bytes], List[Tuple[str, bytes]]]
@@ -537,7 +556,7 @@ class UserApi:
 
         # set the HTTP header `Content-Type`
         if _content_type:
-            _header_params['Content-Type'] = _content_type
+            self.api_client._set_header(_header_params, 'Content-Type', _content_type)
         else:
             _default_content_type = (
                 self.api_client.select_header_content_type(
@@ -547,7 +566,7 @@ class UserApi:
                 )
             )
             if _default_content_type is not None:
-                _header_params['Content-Type'] = _default_content_type
+                self.api_client._set_header(_header_params, 'Content-Type', _default_content_type)
 
         # authentication setting
         _auth_settings: List[str] = [
@@ -782,7 +801,7 @@ class UserApi:
 
         _path_params: Dict[str, str] = {}
         _query_params: List[Tuple[str, str]] = []
-        _header_params: Dict[str, Optional[str]] = _headers or {}
+        _header_params: Dict[str, Any] = self.api_client._merge_headers(_headers)
         _form_params: List[Tuple[str, str]] = []
         _files: Dict[
             str, Union[str, bytes, List[str], List[bytes], List[Tuple[str, bytes]]]
@@ -801,7 +820,7 @@ class UserApi:
 
         # set the HTTP header `Content-Type`
         if _content_type:
-            _header_params['Content-Type'] = _content_type
+            self.api_client._set_header(_header_params, 'Content-Type', _content_type)
         else:
             _default_content_type = (
                 self.api_client.select_header_content_type(
@@ -811,7 +830,7 @@ class UserApi:
                 )
             )
             if _default_content_type is not None:
-                _header_params['Content-Type'] = _default_content_type
+                self.api_client._set_header(_header_params, 'Content-Type', _default_content_type)
 
         # authentication setting
         _auth_settings: List[str] = [
@@ -1051,7 +1070,7 @@ class UserApi:
 
         _path_params: Dict[str, str] = {}
         _query_params: List[Tuple[str, str]] = []
-        _header_params: Dict[str, Optional[str]] = _headers or {}
+        _header_params: Dict[str, Any] = self.api_client._merge_headers(_headers)
         _form_params: List[Tuple[str, str]] = []
         _files: Dict[
             str, Union[str, bytes, List[str], List[bytes], List[Tuple[str, bytes]]]
@@ -1310,7 +1329,7 @@ class UserApi:
 
         _path_params: Dict[str, str] = {}
         _query_params: List[Tuple[str, str]] = []
-        _header_params: Dict[str, Optional[str]] = _headers or {}
+        _header_params: Dict[str, Any] = self.api_client._merge_headers(_headers)
         _form_params: List[Tuple[str, str]] = []
         _files: Dict[
             str, Union[str, bytes, List[str], List[bytes], List[Tuple[str, bytes]]]
@@ -1327,7 +1346,7 @@ class UserApi:
 
 
         # set the HTTP header `Accept`
-        if 'Accept' not in _header_params:
+        if not any(key.lower() == 'accept' for key in _header_params):
             _header_params['Accept'] = self.api_client.select_header_accept(
                 [
                     'application/xml', 
@@ -1587,7 +1606,7 @@ class UserApi:
 
         _path_params: Dict[str, str] = {}
         _query_params: List[Tuple[str, str]] = []
-        _header_params: Dict[str, Optional[str]] = _headers or {}
+        _header_params: Dict[str, Any] = self.api_client._merge_headers(_headers)
         _form_params: List[Tuple[str, str]] = []
         _files: Dict[
             str, Union[str, bytes, List[str], List[bytes], List[Tuple[str, bytes]]]
@@ -1610,7 +1629,7 @@ class UserApi:
 
 
         # set the HTTP header `Accept`
-        if 'Accept' not in _header_params:
+        if not any(key.lower() == 'accept' for key in _header_params):
             _header_params['Accept'] = self.api_client.select_header_accept(
                 [
                     'application/xml', 
@@ -1838,7 +1857,7 @@ class UserApi:
 
         _path_params: Dict[str, str] = {}
         _query_params: List[Tuple[str, str]] = []
-        _header_params: Dict[str, Optional[str]] = _headers or {}
+        _header_params: Dict[str, Any] = self.api_client._merge_headers(_headers)
         _form_params: List[Tuple[str, str]] = []
         _files: Dict[
             str, Union[str, bytes, List[str], List[bytes], List[Tuple[str, bytes]]]
@@ -2105,7 +2124,7 @@ class UserApi:
 
         _path_params: Dict[str, str] = {}
         _query_params: List[Tuple[str, str]] = []
-        _header_params: Dict[str, Optional[str]] = _headers or {}
+        _header_params: Dict[str, Any] = self.api_client._merge_headers(_headers)
         _form_params: List[Tuple[str, str]] = []
         _files: Dict[
             str, Union[str, bytes, List[str], List[bytes], List[Tuple[str, bytes]]]
@@ -2126,7 +2145,7 @@ class UserApi:
 
         # set the HTTP header `Content-Type`
         if _content_type:
-            _header_params['Content-Type'] = _content_type
+            self.api_client._set_header(_header_params, 'Content-Type', _content_type)
         else:
             _default_content_type = (
                 self.api_client.select_header_content_type(
@@ -2136,7 +2155,7 @@ class UserApi:
                 )
             )
             if _default_content_type is not None:
-                _header_params['Content-Type'] = _default_content_type
+                self.api_client._set_header(_header_params, 'Content-Type', _default_content_type)
 
         # authentication setting
         _auth_settings: List[str] = [

@@ -2,8 +2,11 @@ package org.openapitools.model;
 
 import java.net.URI;
 import java.util.Objects;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonSetter;
+import com.fasterxml.jackson.annotation.Nulls;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -22,16 +25,19 @@ import jakarta.annotation.Generated;
  * ArrayTest
  */
 
-@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", comments = "Generator version: 7.23.0-SNAPSHOT")
+@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", comments = "Generator version: 7.27.0-SNAPSHOT")
 public class ArrayTest {
 
-  @Valid
+  @JsonInclude(JsonInclude.Include.NON_NULL)
+  @JsonSetter(nulls = Nulls.SKIP)
   private List<String> arrayOfString = new ArrayList<>();
 
-  @Valid
+  @JsonInclude(JsonInclude.Include.NON_NULL)
+  @JsonSetter(nulls = Nulls.SKIP)
   private List<List<Long>> arrayArrayOfInteger = new ArrayList<>();
 
-  @Valid
+  @JsonInclude(JsonInclude.Include.NON_NULL)
+  @JsonSetter(nulls = Nulls.SKIP)
   private List<List<@Valid ReadOnlyFirst>> arrayArrayOfModel = new ArrayList<>();
 
   public ArrayTest arrayOfString(List<String> arrayOfString) {
@@ -80,7 +86,7 @@ public class ArrayTest {
    * Get arrayArrayOfInteger
    * @return arrayArrayOfInteger
    */
-  @Valid 
+  
   @Schema(name = "array_array_of_integer", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
   @JsonProperty("array_array_of_integer")
   public List<List<Long>> getArrayArrayOfInteger() {
@@ -109,7 +115,7 @@ public class ArrayTest {
    * Get arrayArrayOfModel
    * @return arrayArrayOfModel
    */
-  @Valid 
+  
   @Schema(name = "array_array_of_model", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
   @JsonProperty("array_array_of_model")
   public List<List<@Valid ReadOnlyFirst>> getArrayArrayOfModel() {

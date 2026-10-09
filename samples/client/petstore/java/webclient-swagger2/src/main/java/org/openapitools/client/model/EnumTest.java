@@ -46,7 +46,7 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
   EnumTest.JSON_PROPERTY_OUTER_ENUM_INTEGER_DEFAULT_VALUE
 })
 @JsonTypeName("Enum_Test")
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", comments = "Generator version: 7.23.0-SNAPSHOT")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", comments = "Generator version: 7.27.0-SNAPSHOT")
 public class EnumTest {
   /**
    * Gets or Sets enumString
@@ -134,9 +134,9 @@ public class EnumTest {
    * Gets or Sets enumInteger
    */
   public enum EnumIntegerEnum {
-    NUMBER_1(Integer.valueOf(1)),
+    NUMBER_1(1),
     
-    NUMBER_MINUS_1(Integer.valueOf(-1));
+    NUMBER_MINUS_1(-1);
 
     private Integer value;
 
@@ -173,9 +173,9 @@ public class EnumTest {
    * Gets or Sets enumNumber
    */
   public enum EnumNumberEnum {
-    NUMBER_1_DOT_1(Double.valueOf(1.1)),
+    NUMBER_1_DOT_1(1.1),
     
-    NUMBER_MINUS_1_DOT_2(Double.valueOf(-1.2));
+    NUMBER_MINUS_1_DOT_2(-1.2);
 
     private Double value;
 
@@ -342,7 +342,7 @@ public class EnumTest {
    * @return outerEnum
    */
   @javax.annotation.Nullable
-  @Schema(requiredMode = Schema.RequiredMode.NOT_REQUIRED, description = "")
+  @Schema(requiredMode = Schema.RequiredMode.NOT_REQUIRED, description = "", nullable = true)
   @JsonIgnore
 
   public OuterEnum getOuterEnum() {

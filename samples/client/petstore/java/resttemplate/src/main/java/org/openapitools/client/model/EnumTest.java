@@ -46,7 +46,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
   EnumTest.JSON_PROPERTY_OUTER_ENUM_INTEGER_DEFAULT_VALUE
 })
 @JsonTypeName("Enum_Test")
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", comments = "Generator version: 7.23.0-SNAPSHOT")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", comments = "Generator version: 7.27.0-SNAPSHOT")
 public class EnumTest {
   /**
    * Gets or Sets enumString
@@ -134,9 +134,9 @@ public class EnumTest {
    * Gets or Sets enumInteger
    */
   public enum EnumIntegerEnum {
-    NUMBER_1(Integer.valueOf(1)),
+    NUMBER_1(1),
     
-    NUMBER_MINUS_1(Integer.valueOf(-1));
+    NUMBER_MINUS_1(-1);
 
     private Integer value;
 
@@ -173,9 +173,9 @@ public class EnumTest {
    * Gets or Sets enumNumber
    */
   public enum EnumNumberEnum {
-    NUMBER_1_DOT_1(Double.valueOf(1.1)),
+    NUMBER_1_DOT_1(1.1),
     
-    NUMBER_MINUS_1_DOT_2(Double.valueOf(-1.2));
+    NUMBER_MINUS_1_DOT_2(-1.2);
 
     private Double value;
 
@@ -230,7 +230,7 @@ public class EnumTest {
   /**
    * Constructor with all args parameters
    */
-  public EnumTest(@JsonProperty(JSON_PROPERTY_ENUM_STRING) EnumStringEnum enumString, @JsonProperty(JSON_PROPERTY_ENUM_STRING_REQUIRED) EnumStringRequiredEnum enumStringRequired, @JsonProperty(JSON_PROPERTY_ENUM_INTEGER) EnumIntegerEnum enumInteger, @JsonProperty(JSON_PROPERTY_ENUM_NUMBER) EnumNumberEnum enumNumber, @JsonProperty(JSON_PROPERTY_OUTER_ENUM) OuterEnum outerEnum, @JsonProperty(JSON_PROPERTY_OUTER_ENUM_INTEGER) OuterEnumInteger outerEnumInteger, @JsonProperty(JSON_PROPERTY_OUTER_ENUM_DEFAULT_VALUE) OuterEnumDefaultValue outerEnumDefaultValue, @JsonProperty(JSON_PROPERTY_OUTER_ENUM_INTEGER_DEFAULT_VALUE) OuterEnumIntegerDefaultValue outerEnumIntegerDefaultValue) {
+  public EnumTest(@JsonProperty(JSON_PROPERTY_ENUM_STRING) @javax.annotation.Nullable EnumStringEnum enumString, @JsonProperty(JSON_PROPERTY_ENUM_STRING_REQUIRED) @javax.annotation.Nonnull EnumStringRequiredEnum enumStringRequired, @JsonProperty(JSON_PROPERTY_ENUM_INTEGER) @javax.annotation.Nullable EnumIntegerEnum enumInteger, @JsonProperty(JSON_PROPERTY_ENUM_NUMBER) @javax.annotation.Nullable EnumNumberEnum enumNumber, @JsonProperty(JSON_PROPERTY_OUTER_ENUM) @javax.annotation.Nullable OuterEnum outerEnum, @JsonProperty(JSON_PROPERTY_OUTER_ENUM_INTEGER) @javax.annotation.Nullable OuterEnumInteger outerEnumInteger, @JsonProperty(JSON_PROPERTY_OUTER_ENUM_DEFAULT_VALUE) @javax.annotation.Nullable OuterEnumDefaultValue outerEnumDefaultValue, @JsonProperty(JSON_PROPERTY_OUTER_ENUM_INTEGER_DEFAULT_VALUE) @javax.annotation.Nullable OuterEnumIntegerDefaultValue outerEnumIntegerDefaultValue) {
     this.enumString = enumString;
     this.enumStringRequired = enumStringRequired;
     this.enumInteger = enumInteger;

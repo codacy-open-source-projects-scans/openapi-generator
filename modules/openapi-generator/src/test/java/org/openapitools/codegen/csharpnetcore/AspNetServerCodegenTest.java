@@ -20,7 +20,21 @@ import org.openapitools.codegen.languages.AspNetServerCodegen;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
+import java.io.File;
+
 public class AspNetServerCodegenTest {
+
+    @Test
+    public void doesNotGenerateObsoleteWwwrootReadme() {
+        final AspNetServerCodegen codegen = new AspNetServerCodegen();
+
+        codegen.processOpts();
+
+        Assert.assertFalse(codegen.supportingFiles().stream()
+                .anyMatch(file -> file.getTemplateFile().equals("wwwroot" + File.separator + "README.md")));
+        Assert.assertTrue(codegen.supportingFiles().stream()
+                .anyMatch(file -> file.getTemplateFile().equals("wwwroot" + File.separator + "index.html")));
+    }
 
     @Test
     public void abstractClassUsesDefaultVirtualOperations() {
@@ -56,5 +70,28 @@ public class AspNetServerCodegenTest {
         Assert.assertEquals(codegen.additionalProperties().get("classModifier"), "abstract");
         Assert.assertEquals(codegen.additionalProperties().get("operationModifier"), "virtual");
         Assert.assertEquals(codegen.additionalProperties().get("generateBody"), Boolean.TRUE);
+    }
+
+    @Test
+    public void aspnetCore10UsesNet10TargetFramework() {
+        final AspNetServerCodegen codegen = new AspNetServerCodegen();
+        codegen.additionalProperties().put(AspNetServerCodegen.ASPNET_CORE_VERSION, "10.0");
+
+        codegen.processOpts();
+
+        Assert.assertEquals(codegen.additionalProperties().get(AspNetServerCodegen.TARGET_FRAMEWORK), "net10.0");
+        Assert.assertEquals(codegen.additionalProperties().get(AspNetServerCodegen.USE_FRAMEWORK_REFERENCE), Boolean.TRUE);
+        Assert.assertEquals(codegen.additionalProperties().get(AspNetServerCodegen.NET_60_OR_LATER), Boolean.TRUE);
+        Assert.assertEquals(codegen.additionalProperties().get(AspNetServerCodegen.NET_10_OR_LATER), Boolean.TRUE);
+    }
+
+    @Test
+    public void aspnetCore10IsTheDefaultVersion() {
+        final AspNetServerCodegen codegen = new AspNetServerCodegen();
+
+        codegen.processOpts();
+
+        Assert.assertEquals(codegen.additionalProperties().get(AspNetServerCodegen.ASPNET_CORE_VERSION), "10.0");
+        Assert.assertEquals(codegen.additionalProperties().get(AspNetServerCodegen.TARGET_FRAMEWORK), "net10.0");
     }
 }

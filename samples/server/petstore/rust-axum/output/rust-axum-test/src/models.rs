@@ -1,11 +1,23 @@
 #![allow(unused_qualifications)]
 
+#[cfg(feature = "server")]
 use http::HeaderValue;
 use validator::Validate;
 
 #[cfg(feature = "server")]
 use crate::header;
 use crate::{models, types::*};
+
+#[cfg(feature = "server")]
+#[allow(dead_code)]
+pub type SSE = std::pin::Pin<
+    std::boxed::Box<
+        dyn futures_util::Stream<
+                Item = std::result::Result<axum::response::sse::Event, std::convert::Infallible>,
+            > + std::marker::Send
+            + std::marker::Sync,
+    >,
+>;
 
 #[allow(dead_code)]
 fn from_validation_error(e: validator::ValidationError) -> validator::ValidationErrors {
@@ -14,9 +26,21 @@ fn from_validation_error(e: validator::ValidationError) -> validator::Validation
     errs
 }
 
+/// XSS detection relies on `ammonia`, which is only pulled in by the `server` feature.
+/// Without it (e.g. models-only WASM builds), values are never flagged as HTML.
+#[cfg(feature = "server")]
+fn contains_html(v: &str) -> bool {
+    ammonia::is_html(v)
+}
+
+#[cfg(not(feature = "server"))]
+fn contains_html(_v: &str) -> bool {
+    false
+}
+
 #[allow(dead_code)]
 pub fn check_xss_string(v: &str) -> std::result::Result<(), validator::ValidationError> {
-    if ammonia::is_html(v) {
+    if contains_html(v) {
         std::result::Result::Err(validator::ValidationError::new("xss detected"))
     } else {
         std::result::Result::Ok(())
@@ -25,7 +49,7 @@ pub fn check_xss_string(v: &str) -> std::result::Result<(), validator::Validatio
 
 #[allow(dead_code)]
 pub fn check_xss_vec_string(v: &[String]) -> std::result::Result<(), validator::ValidationError> {
-    if v.iter().any(|i| ammonia::is_html(i)) {
+    if v.iter().any(|i| contains_html(i)) {
         std::result::Result::Err(validator::ValidationError::new("xss detected"))
     } else {
         std::result::Result::Ok(())
@@ -36,7 +60,7 @@ pub fn check_xss_vec_string(v: &[String]) -> std::result::Result<(), validator::
 pub fn check_xss_map_string(
     v: &std::collections::HashMap<String, String>,
 ) -> std::result::Result<(), validator::ValidationError> {
-    if v.keys().any(|k| ammonia::is_html(k)) || v.values().any(|v| ammonia::is_html(v)) {
+    if v.keys().any(|k| contains_html(k)) || v.values().any(|v| contains_html(v)) {
         std::result::Result::Err(validator::ValidationError::new("xss detected"))
     } else {
         std::result::Result::Ok(())
@@ -50,7 +74,7 @@ pub fn check_xss_map_nested<T>(
 where
     T: validator::Validate,
 {
-    if v.keys().any(|k| ammonia::is_html(k)) || v.values().any(|v| v.validate().is_err()) {
+    if v.keys().any(|k| contains_html(k)) || v.values().any(|v| v.validate().is_err()) {
         std::result::Result::Err(validator::ValidationError::new("xss detected"))
     } else {
         std::result::Result::Ok(())
@@ -61,7 +85,7 @@ where
 pub fn check_xss_map<T>(
     v: &std::collections::HashMap<String, T>,
 ) -> std::result::Result<(), validator::ValidationError> {
-    if v.keys().any(|k| ammonia::is_html(k)) {
+    if v.keys().any(|k| contains_html(k)) {
         std::result::Result::Err(validator::ValidationError::new("xss detected"))
     } else {
         std::result::Result::Ok(())
@@ -149,7 +173,7 @@ impl std::str::FromStr for FooANullableContainer {
                 None => {
                     return std::result::Result::Err(
                         "Missing value while parsing FooANullableContainer".to_string(),
-                    );
+                    )
                 }
             };
 
@@ -362,7 +386,7 @@ impl std::str::FromStr for FooAllOfObject {
                 None => {
                     return std::result::Result::Err(
                         "Missing value while parsing FooAllOfObject".to_string(),
-                    );
+                    )
                 }
             };
 
@@ -380,7 +404,7 @@ impl std::str::FromStr for FooAllOfObject {
                     _ => {
                         return std::result::Result::Err(
                             "Unexpected key while parsing FooAllOfObject".to_string(),
-                        );
+                        )
                     }
                 }
             }
@@ -463,17 +487,16 @@ impl FooBaseAllOf {
 impl std::fmt::Display for FooBaseAllOf {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let params: Vec<Option<String>> =
-            vec![
-                self.sample_base_property
-                    .as_ref()
-                    .map(|sample_base_property| {
-                        [
-                            "sampleBaseProperty".to_string(),
-                            sample_base_property.to_string(),
-                        ]
-                        .join(",")
-                    }),
-            ];
+            vec![self
+                .sample_base_property
+                .as_ref()
+                .map(|sample_base_property| {
+                    [
+                        "sampleBaseProperty".to_string(),
+                        sample_base_property.to_string(),
+                    ]
+                    .join(",")
+                })];
 
         write!(
             f,
@@ -509,7 +532,7 @@ impl std::str::FromStr for FooBaseAllOf {
                 None => {
                     return std::result::Result::Err(
                         "Missing value while parsing FooBaseAllOf".to_string(),
-                    );
+                    )
                 }
             };
 
@@ -523,7 +546,7 @@ impl std::str::FromStr for FooBaseAllOf {
                     _ => {
                         return std::result::Result::Err(
                             "Unexpected key while parsing FooBaseAllOf".to_string(),
-                        );
+                        )
                     }
                 }
             }
@@ -649,7 +672,7 @@ impl std::str::FromStr for FooDummyPutRequest {
                 None => {
                     return std::result::Result::Err(
                         "Missing value while parsing FooDummyPutRequest".to_string(),
-                    );
+                    )
                 }
             };
 
@@ -667,7 +690,7 @@ impl std::str::FromStr for FooDummyPutRequest {
                     _ => {
                         return std::result::Result::Err(
                             "Unexpected key while parsing FooDummyPutRequest".to_string(),
-                        );
+                        )
                     }
                 }
             }
@@ -753,11 +776,10 @@ impl FooGetYamlResponse {
 /// Should be implemented in a serde serializer
 impl std::fmt::Display for FooGetYamlResponse {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let params: Vec<Option<String>> = vec![
-            self.value
-                .as_ref()
-                .map(|value| ["value".to_string(), value.to_string()].join(",")),
-        ];
+        let params: Vec<Option<String>> = vec![self
+            .value
+            .as_ref()
+            .map(|value| ["value".to_string(), value.to_string()].join(","))];
 
         write!(
             f,
@@ -793,7 +815,7 @@ impl std::str::FromStr for FooGetYamlResponse {
                 None => {
                     return std::result::Result::Err(
                         "Missing value while parsing FooGetYamlResponse".to_string(),
-                    );
+                    )
                 }
             };
 
@@ -807,7 +829,7 @@ impl std::str::FromStr for FooGetYamlResponse {
                     _ => {
                         return std::result::Result::Err(
                             "Unexpected key while parsing FooGetYamlResponse".to_string(),
-                        );
+                        )
                     }
                 }
             }
@@ -926,7 +948,7 @@ impl std::str::FromStr for FooObjectOfObjects {
                 None => {
                     return std::result::Result::Err(
                         "Missing value while parsing FooObjectOfObjects".to_string(),
-                    );
+                    )
                 }
             };
 
@@ -941,7 +963,7 @@ impl std::str::FromStr for FooObjectOfObjects {
                     _ => {
                         return std::result::Result::Err(
                             "Unexpected key while parsing FooObjectOfObjects".to_string(),
-                        );
+                        )
                     }
                 }
             }
@@ -1069,7 +1091,7 @@ impl std::str::FromStr for FooObjectOfObjectsInner {
                 None => {
                     return std::result::Result::Err(
                         "Missing value while parsing FooObjectOfObjectsInner".to_string(),
-                    );
+                    )
                 }
             };
 
@@ -1087,7 +1109,7 @@ impl std::str::FromStr for FooObjectOfObjectsInner {
                     _ => {
                         return std::result::Result::Err(
                             "Unexpected key while parsing FooObjectOfObjectsInner".to_string(),
-                        );
+                        )
                     }
                 }
             }
@@ -1172,11 +1194,10 @@ impl FooUnnamedAllofUnderProperties {
 /// Should be implemented in a serde serializer
 impl std::fmt::Display for FooUnnamedAllofUnderProperties {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let params: Vec<Option<String>> = vec![
-            self.name
-                .as_ref()
-                .map(|name| ["name".to_string(), name.to_string()].join(",")),
-        ];
+        let params: Vec<Option<String>> = vec![self
+            .name
+            .as_ref()
+            .map(|name| ["name".to_string(), name.to_string()].join(","))];
 
         write!(
             f,
@@ -1212,7 +1233,7 @@ impl std::str::FromStr for FooUnnamedAllofUnderProperties {
                 None => {
                     return std::result::Result::Err(
                         "Missing value while parsing FooUnnamedAllofUnderProperties".to_string(),
-                    );
+                    )
                 }
             };
 
@@ -1227,7 +1248,7 @@ impl std::str::FromStr for FooUnnamedAllofUnderProperties {
                         return std::result::Result::Err(
                             "Unexpected key while parsing FooUnnamedAllofUnderProperties"
                                 .to_string(),
-                        );
+                        )
                     }
                 }
             }
@@ -1339,7 +1360,7 @@ impl std::str::FromStr for FooUnnamedReference {
                 None => {
                     return std::result::Result::Err(
                         "Missing value while parsing FooUnnamedReference".to_string(),
-                    );
+                    )
                 }
             };
 
@@ -1349,7 +1370,7 @@ impl std::str::FromStr for FooUnnamedReference {
                     _ => {
                         return std::result::Result::Err(
                             "Unexpected key while parsing FooUnnamedReference".to_string(),
-                        );
+                        )
                     }
                 }
             }

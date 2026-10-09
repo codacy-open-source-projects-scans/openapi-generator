@@ -42,6 +42,7 @@ import java.time.OffsetDateTime;
 import java.time.temporal.ChronoField;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static org.openapitools.codegen.utils.CamelizeOption.LOWERCASE_FIRST_LETTER;
 import static org.openapitools.codegen.utils.StringUtils.camelize;
@@ -78,12 +79,16 @@ public class Swift6ClientCodegen extends DefaultCodegen implements CodegenConfig
     public static final String GENERATE_MODEL_ADDITIONAL_PROPERTIES = "generateModelAdditionalProperties";
     public static final String HASHABLE_MODELS = "hashableModels";
     public static final String IDENTIFIABLE_MODELS = "identifiableModels";
+    public static final String NONISOLATED_MODELS = "nonisolatedModels";
     public static final String USE_PARAMETER_CONVERTIBLE = "useParameterConvertible";
     public static final String MAP_FILE_BINARY_TO_DATA = "mapFileBinaryToData";
     public static final String USE_CUSTOM_DATE_WITHOUT_TIME = "useCustomDateWithoutTime";
     public static final String VALIDATABLE = "validatable";
     public static final String API_STATIC_METHOD = "apiStaticMethod";
     public static final String COMBINE_DEFERRED = "combineDeferred";
+    public static final String ADDITIONAL_MODEL_OBJECT_ATTRIBUTES = "additionalModelObjectAttributes";
+    public static final String ADDITIONAL_MODEL_ENUM_ATTRIBUTES = "additionalModelEnumAttributes";
+    public static final String ADDITIONAL_MODEL_IMPORTS = "additionalModelImports";
     protected static final String LIBRARY_ALAMOFIRE = "alamofire";
     protected static final String LIBRARY_URLSESSION = "urlsession";
     protected static final String LIBRARY_VAPOR = "vapor";
@@ -121,6 +126,8 @@ public class Swift6ClientCodegen extends DefaultCodegen implements CodegenConfig
     @Setter
     protected boolean identifiableModels = true;
     @Setter
+    protected boolean nonisolatedModels = false;
+    @Setter
     protected boolean useParameterConvertible = true;
     @Getter
     @Setter
@@ -133,6 +140,12 @@ public class Swift6ClientCodegen extends DefaultCodegen implements CodegenConfig
     protected boolean apiStaticMethod = true;
     @Setter
     protected boolean combineDeferred = true;
+    @Getter @Setter
+    protected List<String> additionalModelObjectAttributes = new LinkedList<>();
+    @Getter @Setter
+    protected List<String> additionalModelEnumAttributes = new LinkedList<>();
+    @Getter @Setter
+    protected List<String> additionalModelImports = new LinkedList<>();
     @Setter
     protected String[] responseAs = {RESPONSE_LIBRARY_ASYNC_AWAIT};
     protected String sourceFolder = swiftPackagePath;
@@ -211,8 +224,24 @@ public class Swift6ClientCodegen extends DefaultCodegen implements CodegenConfig
 
         reservedWords = new HashSet<>(
                 Arrays.asList(
-                        // name used by swift client
+                        // Types declared by the generated code itself (support files and
+                        // per-library implementations). A model with one of these names
+                        // would be an invalid redeclaration of the client's own type.
                         "ErrorResponse", "Response",
+                        "APIHelper", "AlamofireDecodableRequestBuilder", "AlamofireRequestBuilder",
+                        "AlamofireRequestBuilderFactory", "AnyResponseSerializer", "ArrayRule",
+                        "ArrayValidationErrorKind", "CaseIterableDefaultsLast", "CodableHelper",
+                        "DecodableRequestBuilderError", "DefaultOpenAPIInterceptor", "DownloadException",
+                        "HTTPMethod", "JSONDataEncoding", "JSONEncodingHelper",
+                        "NullEncodable", "NumericRule", "NumericValidationErrorKind",
+                        "OpenAPIInterceptor", "OpenAPIInterceptorRetry",
+                        "OpenAPIMutex", "OpenISO8601DateFormatter", "ParameterConvertible",
+                        "ParameterEncoding", "RequestBuilder", "RequestBuilderFactory", "RequestTask",
+                        "StringRule", "StringValidationErrorKind", "SynchronizedDictionary",
+                        "UnknownCaseCheckable", "URLSessionDataTaskProtocol",
+                        "URLSessionDecodableRequestBuilder", "URLSessionProtocol",
+                        "URLSessionRequestBuilder", "URLSessionRequestBuilderFactory",
+                        "ValidationError", "Validator",
 
                         // Swift keywords. This list is taken from here:
                         // https://developer.apple.com/library/content/documentation/Swift/Conceptual/Swift_Programming_Language/LexicalStructure.html#//apple_ref/doc/uid/TP40014097-CH30-ID410
@@ -249,8 +278,20 @@ public class Swift6ClientCodegen extends DefaultCodegen implements CodegenConfig
                         // Collections
                         "Array", "Dictionary", "Set", "OptionSet", "CountableRange", "CountableClosedRange",
 
-                        // The following are commonly-used Foundation types
+                        // The following are commonly-used Foundation (and stdlib) types that
+                        // the generated support files reference unqualified: a model with one
+                        // of these names would shadow the real type inside the generated
+                        // module and break the client's own code.
                         "URL", "Data", "Codable", "Encodable", "Decodable",
+                        "AnyHashable", "Calendar", "DateFormatter", "DispatchQueue", "FileManager",
+                        "HTTPURLResponse", "JSONDecoder", "JSONEncoder",
+                        "KeyedDecodingContainerProtocol", "KeyedEncodingContainerProtocol",
+                        "Locale", "NSCoder", "NSDecimalNumber", "NSNumber", "NSObject",
+                        "NSRecursiveLock", "NSRegularExpression", "NSString", "Progress",
+                        "TimeZone", "URLAuthenticationChallenge", "URLComponents", "URLCredential",
+                        "URLQueryItem", "URLRequest", "URLResponse", "URLSession",
+                        "URLSessionConfiguration", "URLSessionDataTask", "URLSessionTask",
+                        "URLSessionTaskDelegate",
 
                         // The following are other words we want to reserve
                         "Void", "AnyObject", "Class", "dynamicType", "COLUMN", "FILE", "FUNCTION", "LINE"
@@ -341,6 +382,12 @@ public class Swift6ClientCodegen extends DefaultCodegen implements CodegenConfig
                 "Make models conform to Identifiable when an id is present (default: true)")
                 .defaultValue(Boolean.TRUE.toString()));
 
+        cliOptions.add(new CliOption(NONISOLATED_MODELS,
+                "Mark generated models, and the supporting protocols, extensions and helper types they rely on, "
+                        + "as nonisolated so they stay usable off the main actor in modules built with default MainActor isolation (SE-0466). "
+                        + "Requires a Swift 6.1+ toolchain (default: false)")
+                .defaultValue(Boolean.FALSE.toString()));
+
         cliOptions.add(new CliOption(USE_PARAMETER_CONVERTIBLE,
                 "Make models conform to ParameterConvertible protocol (default: true)")
                 .defaultValue(Boolean.TRUE.toString()));
@@ -364,6 +411,18 @@ public class Swift6ClientCodegen extends DefaultCodegen implements CodegenConfig
         cliOptions.add(new CliOption(COMBINE_DEFERRED,
                 "Make combine usages deferred (default: true)")
                 .defaultValue(Boolean.TRUE.toString()));
+
+        cliOptions.add(CliOption.newString(ADDITIONAL_MODEL_OBJECT_ATTRIBUTES,
+                "Additional Swift attributes prepended to generated model struct/class declarations "
+                        + "(e.g. @MainActor, custom @attached macros). "
+                        + "List separated by semicolon (;) or new line (Linux or Windows)."));
+        cliOptions.add(CliOption.newString(ADDITIONAL_MODEL_ENUM_ATTRIBUTES,
+                "Additional Swift attributes prepended to generated model enum declarations "
+                        + "(e.g. @CasePathable, @dynamicMemberLookup, custom @attached macros). "
+                        + "List separated by semicolon (;) or new line (Linux or Windows)."));
+        cliOptions.add(CliOption.newString(ADDITIONAL_MODEL_IMPORTS,
+                "Additional Swift modules to import in every generated model file. "
+                        + "List separated by semicolon (;) or new line (Linux or Windows)."));
 
         supportedLibraries.put(LIBRARY_URLSESSION, "[DEFAULT] HTTP client: URLSession");
         supportedLibraries.put(LIBRARY_ALAMOFIRE, "HTTP client: Alamofire");
@@ -569,6 +628,11 @@ public class Swift6ClientCodegen extends DefaultCodegen implements CodegenConfig
         }
         additionalProperties.put(IDENTIFIABLE_MODELS, identifiableModels);
 
+        if (additionalProperties.containsKey(NONISOLATED_MODELS)) {
+            setNonisolatedModels(convertPropertyToBooleanAndWriteBack(NONISOLATED_MODELS));
+        }
+        additionalProperties.put(NONISOLATED_MODELS, nonisolatedModels);
+
         if (additionalProperties.containsKey(USE_PARAMETER_CONVERTIBLE)) {
             setUseParameterConvertible(convertPropertyToBooleanAndWriteBack(USE_PARAMETER_CONVERTIBLE));
         }
@@ -720,6 +784,112 @@ public class Swift6ClientCodegen extends DefaultCodegen implements CodegenConfig
                 break;
         }
 
+        if (additionalProperties.containsKey(ADDITIONAL_MODEL_OBJECT_ATTRIBUTES)) {
+            String value = additionalProperties.get(ADDITIONAL_MODEL_OBJECT_ATTRIBUTES).toString();
+            setAdditionalModelObjectAttributes(splitAdditionalModelOption(value));
+        }
+        if (additionalProperties.containsKey(ADDITIONAL_MODEL_ENUM_ATTRIBUTES)) {
+            String value = additionalProperties.get(ADDITIONAL_MODEL_ENUM_ATTRIBUTES).toString();
+            setAdditionalModelEnumAttributes(splitAdditionalModelOption(value));
+        }
+        if (additionalProperties.containsKey(ADDITIONAL_MODEL_IMPORTS)) {
+            String value = additionalProperties.get(ADDITIONAL_MODEL_IMPORTS).toString();
+            setAdditionalModelImports(splitAdditionalModelOption(value));
+        }
+    }
+
+    private static List<String> splitAdditionalModelOption(String value) {
+        return Arrays.stream(SPLIT_ON_SEMICOLON_OR_NEWLINE_REGEX.split(value.trim()))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public Map<String, ModelsMap> postProcessAllModels(Map<String, ModelsMap> objs) {
+        objs = super.postProcessAllModels(objs);
+        markModelClassRendering(objs);
+        if (additionalModelObjectAttributes.isEmpty()
+                && additionalModelEnumAttributes.isEmpty()
+                && additionalModelImports.isEmpty()) {
+            return objs;
+        }
+        for (String modelName : objs.keySet()) {
+            Map<String, Object> models = (Map<String, Object>) objs.get(modelName);
+            if (!additionalModelObjectAttributes.isEmpty()) {
+                models.put(ADDITIONAL_MODEL_OBJECT_ATTRIBUTES, additionalModelObjectAttributes);
+            }
+            if (!additionalModelEnumAttributes.isEmpty()) {
+                models.put(ADDITIONAL_MODEL_ENUM_ATTRIBUTES, additionalModelEnumAttributes);
+            }
+            if (!additionalModelImports.isEmpty()) {
+                models.put(ADDITIONAL_MODEL_IMPORTS, additionalModelImports);
+            }
+        }
+        return objs;
+    }
+
+    /** Models on an inline reference cycle become final classes: a struct that stores itself has infinite size (#15240). */
+    private void markModelClassRendering(Map<String, ModelsMap> objs) {
+        Map<String, CodegenModel> modelsByClassname = new HashMap<>();
+        for (ModelsMap modelsMap : objs.values()) {
+            for (ModelMap modelMap : modelsMap.getModels()) {
+                CodegenModel cm = modelMap.getModel();
+                modelsByClassname.put(cm.classname, cm);
+            }
+        }
+
+        Map<String, Set<String>> inlineRefs = new HashMap<>();
+        for (CodegenModel cm : modelsByClassname.values()) {
+            Set<String> refs = new LinkedHashSet<>();
+            collectInlineModelRefs(cm.allVars, modelsByClassname, refs);
+            if (cm.getComposedSchemas() != null) {
+                // oneOf/anyOf render as enums with inline associated values, so they carry the
+                // recursion; allOf is flattened into allVars and is deliberately not an edge
+                collectInlineModelRefs(cm.getComposedSchemas().getOneOf(), modelsByClassname, refs);
+                collectInlineModelRefs(cm.getComposedSchemas().getAnyOf(), modelsByClassname, refs);
+            }
+            inlineRefs.put(cm.classname, refs);
+        }
+
+        for (CodegenModel cm : modelsByClassname.values()) {
+            boolean recursive = !useClasses && isOnInlineReferenceCycle(cm.classname, inlineRefs);
+            if (useClasses || recursive) {
+                cm.vendorExtensions.put("x-swift-use-class", true);
+            }
+            if ((useClasses && readonlyProperties) || recursive) {
+                // a struct embedding one of these classes is still declared Sendable, so the
+                // class must conform; a recursion-breaking class is treated as unchecked the
+                // way readonlyProperties classes already are
+                cm.vendorExtensions.put("x-swift-unchecked-sendable", true);
+            }
+        }
+    }
+
+    private void collectInlineModelRefs(List<CodegenProperty> vars, Map<String, CodegenModel> modelsByClassname, Set<String> refs) {
+        if (vars == null) {
+            return;
+        }
+        for (CodegenProperty var : vars) {
+            if (!var.isContainer && var.complexType != null && modelsByClassname.containsKey(var.complexType)) {
+                refs.add(var.complexType);
+            }
+        }
+    }
+
+    private boolean isOnInlineReferenceCycle(String classname, Map<String, Set<String>> inlineRefs) {
+        Deque<String> toVisit = new ArrayDeque<>(inlineRefs.getOrDefault(classname, Collections.emptySet()));
+        Set<String> visited = new HashSet<>();
+        while (!toVisit.isEmpty()) {
+            String current = toVisit.pop();
+            if (classname.equals(current)) {
+                return true;
+            }
+            if (visited.add(current)) {
+                toVisit.addAll(inlineRefs.getOrDefault(current, Collections.emptySet()));
+            }
+        }
+        return false;
     }
 
     @Override
@@ -751,9 +921,10 @@ public class Swift6ClientCodegen extends DefaultCodegen implements CodegenConfig
     public String getTypeDeclaration(Schema p) {
         if (ModelUtils.isArraySchema(p)) {
             Schema inner = ModelUtils.getSchemaItems(p);
-            return ModelUtils.isSet(p) ? "Set<" + getTypeDeclaration(inner) + ">" : "[" + getTypeDeclaration(inner) + "]";
+            String innerTypeDeclaration = getItemsTypeDeclaration(inner);
+            return ModelUtils.isSet(p) ? "Set<" + innerTypeDeclaration + ">" : "[" + innerTypeDeclaration + "]";
         } else if (ModelUtils.isMapSchema(p)) {
-            Schema inner = ModelUtils.getAdditionalProperties(p);
+            Schema inner = unaliasSchema(ModelUtils.getAdditionalProperties(p));
             return "[String: " + getItemsTypeDeclaration(inner) + "]";
         }
         return super.getTypeDeclaration(p);
@@ -761,7 +932,8 @@ public class Swift6ClientCodegen extends DefaultCodegen implements CodegenConfig
 
     private String getItemsTypeDeclaration(Schema items) {
         String itemsTypeDeclaration = getTypeDeclaration(items);
-        String nullable = items.getNullable() != null && items.getNullable() && !itemsTypeDeclaration.endsWith("?") ? "?" : "";
+        Schema itemsSchema = ModelUtils.getReferencedSchema(openAPI, unaliasSchema(items));
+        String nullable = ModelUtils.isNullable(itemsSchema) && !itemsTypeDeclaration.endsWith("?") ? "?" : "";
         return itemsTypeDeclaration + nullable;
     }
 
@@ -1256,6 +1428,16 @@ public class Swift6ClientCodegen extends DefaultCodegen implements CodegenConfig
     }
 
     @Override
+    public String toRegularExpression(String pattern) {
+        // Don't wrap the pattern in "/.../" delimiters: the generated
+        // Validator hands rule.pattern straight to NSRegularExpression, which
+        // has no delimiter syntax. Wrapping also escaped every inner "/" as
+        // "\/", which is not a valid escape sequence in a Swift string
+        // literal, so any pattern containing "/" failed to compile (#15604).
+        return escapeText(pattern);
+    }
+
+    @Override
     public String escapeQuotationMark(String input) {
         // remove " to avoid code injection
         return input.replace("\"", "");
@@ -1405,17 +1587,19 @@ public class Swift6ClientCodegen extends DefaultCodegen implements CodegenConfig
 
     @Override
     public void postProcess() {
-        System.out.println("################################################################################");
-        System.out.println("# Thanks for using OpenAPI Generator.                                          #");
-        System.out.println("# Please consider donation to help us maintain this project \uD83D\uDE4F                 #");
-        System.out.println("# https://opencollective.com/openapi_generator/donate                          #");
-        System.out.println("#                                                                              #");
-        System.out.println("# swift6 generator is contributed by Bruno Coelho (https://github.com/4brunu). #");
-        System.out.println("# Please support his work directly via https://paypal.com/paypalme/4brunu \uD83D\uDE4F   #");
-        System.out.println("#                                                                              #");
-        System.out.println("# If you need help migrating from the swift5 to the swift6 generator, check the following url.#");
-        System.out.println("# https://openapi-generator.tech/docs/faq-generators/#how-do-i-migrate-from-the-swift-5-generator-to-the-swift-6-generator");
-        System.out.println("################################################################################");
+        if (!isQuietMode()) {
+            System.out.println("################################################################################");
+            System.out.println("# Thanks for using OpenAPI Generator.                                          #");
+            System.out.println("# Please consider donating to help us maintain this project \uD83D\uDE4F                 #");
+            System.out.println("# https://opencollective.com/openapi_generator/donate                          #");
+            System.out.println("#                                                                              #");
+            System.out.println("# swift6 generator is contributed by Bruno Coelho (https://github.com/4brunu). #");
+            System.out.println("# Please support his work directly via https://paypal.com/paypalme/4brunu \uD83D\uDE4F   #");
+            System.out.println("#                                                                              #");
+            System.out.println("# If you need help migrating from the swift5 to the swift6 generator, check the following url.#");
+            System.out.println("# https://openapi-generator.tech/docs/faq-generators/#how-do-i-migrate-from-the-swift-5-generator-to-the-swift-6-generator");
+            System.out.println("################################################################################");
+        }
     }
 
     @Override
